@@ -1,0 +1,46 @@
+﻿@* @model List<Hrms_system.Models.AssignLeavesViewModel>
+
+@{
+    ViewData["Title"] = "Assign Leave";
+    Layout = "_AdminLayout";
+}
+
+<div class="container">
+    <h2>Assign Leave</h2>
+    <form asp-action="AssignLeave" method="post">
+        <div class="table-responsive">
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Employee Name</th>
+                        <th>Leave Types</th>
+                        <th>Current Balance</th>
+                        <th>Default Leaves Allowed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < Model.Count; i++)
+                    {
+                        <tr>
+                            <td>@Model[i].EmployeeName</td>
+                            <td>
+                                <input type="hidden" name="model[@i].EmployeeId" value="@Model[i].EmployeeId" />
+                                @foreach (var leaveType in Model[i].LeaveTypes)
+                                {
+                                    <div class="form-check">
+                                        <input type="checkbox" name="model[@i].LeaveTypes[@leaveType.Id].Id" value="@leaveType.Id" class="form-check-input" checked="@Model[i].LeaveTypes.Any(lt => lt.Id == leaveType.Id)" />
+                                        <label class="form-check-label">@leaveType.Name</label>
+                                    </div>
+                                }
+                            </td>
+                            <td>@Model[i].CurrentBalance</td>
+                            <td>@Model[i].DefaultLeavesAllowed</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <button type="submit" class="btn btn-primary">Assign Leave</button>
+    </form>
+</div>
+ *@

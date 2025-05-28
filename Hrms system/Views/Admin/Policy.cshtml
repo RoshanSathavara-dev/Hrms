@@ -1,0 +1,110 @@
+﻿@model AttendancePolicy
+
+@{
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>Attendance Policy</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Work Schedule</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="SavePolicy" method="post">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="StartTime" class="form-label">Start Time</label>
+                                <input asp-for="StartTime" type="time" class="form-control" />
+                                <span asp-validation-for="StartTime" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="EndTime" class="form-label">End Time</label>
+                                <input asp-for="EndTime" type="time" class="form-control" />
+                                <span asp-validation-for="EndTime" class="text-danger"></span>
+                            </div>
+                            <!-- In Policy.cshtml -->
+                            <div class="col-md-4">
+                                <label asp-for="ExpectedWorkHours" class="form-label">Expected Work Hours</label>
+                                <input asp-for="ExpectedWorkHours" type="time" class="form-control"
+                                       value="@Model.ExpectedWorkHours.ToString(@"hh\:mm")" />
+                                <span asp-validation-for="ExpectedWorkHours" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="LateGracePeriodMinutes" class="form-label">Late Grace Period (minutes)</label>
+                                <input asp-for="LateGracePeriodMinutes" type="number" class="form-control" min="0" />
+                                <span asp-validation-for="LateGracePeriodMinutes" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="EarlyDepartureGraceMinutes" class="form-label">Early Departure Grace (minutes)</label>
+                                <input asp-for="EarlyDepartureGraceMinutes" type="number" class="form-control" min="0" />
+                                <span asp-validation-for="EarlyDepartureGraceMinutes" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label asp-for="MaxBreaksPerDay" class="form-label">Max Breaks Per Day</label>
+                                <input asp-for="MaxBreaksPerDay" type="number" class="form-control" min="0" />
+                                <span asp-validation-for="MaxBreaksPerDay" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label asp-for="MaxBreakDurationMinutes" class="form-label">Max Break Duration (minutes)</label>
+                                <input asp-for="MaxBreakDurationMinutes" type="number" class="form-control" min="0" />
+                                <span asp-validation-for="MaxBreakDurationMinutes" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">Save Policy</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            // Recalculate when times change
+            $('#StartTime, #EndTime, #BreakDuration').change(function() {
+                const start = $('#StartTime').val();
+                const end = $('#EndTime').val();
+                const breakDur = $('#BreakDuration').val();
+
+                if (start && end) {
+                    // Calculate expected hours
+                    const startTime = new Date(`2000-01-01T${start}`);
+                    const endTime = new Date(`2000-01-01T${end}`);
+                    let totalMs = endTime - startTime;
+
+                    if (breakDur) {
+                        const breakTime = new Date(`2000-01-01T${breakDur}`);
+                        totalMs -= (breakTime - new Date(`2000-01-01T00:00:00`));
+                    }
+
+                    const hours = Math.floor(totalMs / 3600000);
+                    const minutes = Math.floor((totalMs % 3600000) / 60000);
+                    const formatted = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+                    $('#ExpectedWorkHours').val(formatted);
+                }
+            });
+        });
+    </script>
+}

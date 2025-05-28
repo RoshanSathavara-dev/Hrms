@@ -1,0 +1,79 @@
+﻿@model IEnumerable<Hrms_system.Models.Payroll>
+
+@{
+    ViewData["Title"] = "Process Payments";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2">Process Payments - @ViewBag.Period</h1>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Employee</th>
+                <th>Net Pay</th>
+                <th>Bank Details</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var payroll in Model)
+            {
+                <tr>
+                    <td>@payroll.Employee?.FullName</td>
+                    <td>@payroll.NetPay.ToString("C")</td>
+                    <td>
+                        @if (!string.IsNullOrEmpty(payroll.Employee?.BankAccountNumber))
+                        {
+                            <span>@payroll.Employee?.BankName (@payroll.Employee?.BankAccountNumber)</span>
+                        }
+                        else
+                        {
+                            <span class="text-danger">Bank details missing</span>
+                        }
+                    </td>
+                    <td>@payroll.Status</td>
+                    <td>
+                        <button class="btn btn-sm btn-success mark-paid" data-id="@payroll.Id">
+                            Mark as Paid
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-4">
+    <button id="processAll" class="btn btn-primary">Process All Payments</button>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('.mark-paid').click(function() {
+                var payrollId = $(this).data('id');
+                $.post('@Url.Action("MarkAsPaid", "Admin")', { payrollId: payrollId }, function(response) {
+                    if (response.success) {
+                        location.reload();
+                    }
+                });
+            });
+
+            $('#processAll').click(function() {
+                if (confirm('Are you sure you want to process all payments?')) {
+                    $.post('@Url.Action("ProcessBulkPayments", "Admin")', { period: '@ViewBag.Period' }, function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

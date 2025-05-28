@@ -1,0 +1,43 @@
+﻿@model IEnumerable<EmployeeLeaveBalance>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">My Leave Balances</h3>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Leave Type</th>
+                    <th>Total Leaves</th>
+                    <th>Used Leaves</th>
+                    <th>Pending Leaves</th>
+                    <th>Available</th>
+                    <th>Carry Forward</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.LeaveType?.Name</td>
+                        <td>@item.TotalLeaves</td>
+                        <td>@item.UsedLeaves</td>
+                        <td>@item.PendingLeaves</td>
+                        <td>@(item.TotalLeaves - item.UsedLeaves - item.PendingLeaves)</td>
+                        <td>
+                            @if (item.CarryForwardedLeaves.HasValue)
+                            {
+                                <span>@item.CarryForwardedLeaves.Value</span>
+                            }
+                            else
+                            {
+                                <span>None</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

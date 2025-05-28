@@ -1,0 +1,65 @@
+﻿@model IEnumerable<EmployeeLeaveBalance>
+
+@{
+    ViewData["Title"] = "Employee Leave Balances";
+    Layout = "_AdminLayout";
+
+}
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h3 class="card-title">Employee Leave Balances</h3>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Leave Type</th>
+                        <th>Total Leaves</th>
+                        <th>Used Leaves</th>
+                        <th>Pending Leaves</th>
+                        <th>Available</th>
+                        <th>Carry Forward</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var balance in Model)
+                    {
+                        <tr>
+                            <td>@balance.Employee?.FullName</td>
+                            <td>@balance.LeaveType?.Name</td>
+                            <td>@balance.TotalLeaves</td>
+                            <td>@balance.UsedLeaves</td>
+                            <td>@balance.PendingLeaves</td>
+                            <td>@(balance.TotalLeaves - balance.UsedLeaves - balance.PendingLeaves)</td>
+                           
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card-footer">
+        <small class="text-muted">Last updated: @DateTime.Now.ToString("dd MMM yyyy HH:mm")</small>
+    </div>
+</div>
+
+    <style>
+        .table th {
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            background-color: #343a40;
+            color: white;
+        }
+
+        .table td {
+            vertical-align: middle;
+        }
+
+        .card {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+    </style>

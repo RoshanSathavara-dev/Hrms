@@ -1,0 +1,499 @@
+﻿@model List<Hrms_system.Models.DailyAttendanceViewModel>
+
+@{
+    ViewData["Title"] = "Attendance Log";
+    DateTime selectedDate = ViewBag.SelectedDate ?? DateTime.Today;
+    string viewType = ViewBag.ViewType ?? "daily";
+    var hasData = Model.Any() && Model.Any(m => m.ClockInTime != TimeSpan.Zero);
+    var day = viewType == "daily" && hasData ? Model.First() : new Hrms_system.Models.DailyAttendanceViewModel
+            {
+                Date = selectedDate,
+                ClockInTime = TimeSpan.Zero,
+                ClockOutTime = null,
+                TotalWorkedHours = TimeSpan.Zero,
+                TotalBreakHours = TimeSpan.Zero,
+                Breaks = new List<Hrms_system.Models.BreakPeriodViewModel>()
+            };
+}
+
+<div class="container mt-4">
+    <div class="card shadow-lg">
+        <div class="card-body">
+
+            <!-- Header Tabs -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <a href="@Url.Action("AttendanceLog", new { date = selectedDate.ToString("yyyy-MM-dd"), viewType = "daily" })"
+                       class="btn btn-outline-primary me-2">Daily Log</a>
+                    <a href="@Url.Action("AttendanceLog", new { date = selectedDate.ToString("yyyy-MM-dd"), viewType = "monthly" })"
+                       class="btn btn-outline-primary">Monthly Log</a>
+                </div>
+                <div class="d-flex align-items-center">
+                    @if (viewType == "daily")
+                    {
+                        <a href="@Url.Action("AttendanceLog", new { date = selectedDate.AddDays(-1).ToString("yyyy-MM-dd"), viewType = "daily" })" class="btn btn-outline-secondary me-2">Previous</a>
+                        <input type="date" id="datePicker" class="form-control me-2" style="width: 150px;" value="@selectedDate.ToString("yyyy-MM-dd")" onchange="navigateToDate(this.value, 'daily')" />
+                        <a href="@Url.Action("AttendanceLog", new { date = selectedDate.AddDays(1).ToString("yyyy-MM-dd"), viewType = "daily" })" class="btn btn-outline-secondary">Next</a>
+                    }
+                    else
+                    {
+                        <a href="@Url.Action("AttendanceLog", new { date = selectedDate.AddMonths(-1).ToString("yyyy-MM-dd"), viewType = "monthly" })" class="btn btn-outline-secondary me-2">Previous</a>
+                        <input type="month" id="monthPicker" class="form-control me-2" style="width: 150px;" value="@selectedDate.ToString("yyyy-MM")" onchange="navigateToMonth(this.value)" />
+                        <a href="@Url.Action("AttendanceLog", new { date = selectedDate.AddMonths(1).ToString("yyyy-MM-dd"), viewType = "monthly" })" class="btn btn-outline-secondary">Next</a>
+                    }
+                </div>
+            </div>
+
+            @if (viewType == "daily")
+            {
+                <div class="card border-0 bg-white shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5 class="fw-bold text-primary mb-3">@day.Date.ToString("dddd, dd MMMM yyyy")</h5>
+
+                                <!-- Timeline -->
+                                <div class="timeline-container mt-3 position-relative" style="height: 80px;">
+                                    <div class="timeline-hours d-flex justify-content-between">
+                                        @for (int hour = 9; hour <= 21; hour++)
+                                        {
+                                            <div style="flex:1; text-align:center; font-size: 12px;">@(hour % 12 == 0 ? 12 : hour % 12)@(hour < 12 ? "AM" : "PM")</div>
+                                        }
+                                    </div>
+                                    <div class="timeline-track position-relative bg-light rounded mt-1" style="height: 30px; width: 100%; border: 1px solid #ddd;">
+                                        @if (hasData)
+                                        {
+                                            <div class="position-absolute bg-success rounded"
+                                                 style="top: 2px; height: 26px; left: @GetPosition(day.ClockInTime.TotalHours)%; width: @GetWorkWidth(day)%; opacity: 0.4;"
+                                                 title="Work Time: @day.ClockInTime.ToString(@"hh\:mm") - @(day.ClockOutTime?.ToString(@"hh\:mm") ?? "Ongoing")">
+                                            </div>
+                                            @foreach (var br in day.Breaks)
+                                            {
+                                                <div class="position-absolute bg-danger rounded"
+                                                     style="top: 2px; height: 26px; left: @GetBreakPosition(br.StartTime.TotalHours)%; width: @GetBreakWidth(br)%; opacity: 0.6;"
+                                                     title="Break: @br.StartTime.ToString(@"hh\:mm") - @br.EndTime.ToString(@"hh\:mm")">
+                                                </div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <!-- Placeholder for empty timeline -->
+                                            <div class="position-absolute w-100 h-100 d-flex align-items-center justify-content-center text-muted">
+                                                --
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Summary Box -->
+                            <div class="col-md-4">
+                                <div class="border p-3 rounded bg-light">
+                                    <h6 class="fw-bold mb-3 text-dark">Summary</h6>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Work Duration</span>
+                                        <span class="fw-bold text-success">
+                                            @(hasData ? $"{(int)day.TotalWorkedHours.TotalHours:D2}h {(int)day.TotalWorkedHours.Minutes:D2}m" : "--")
+                                        </span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>Break Duration</span>
+                                        <span class="fw-bold text-danger">
+                                            @(hasData ? $"{(int)day.TotalBreakHours.TotalHours:D2}h {(int)day.TotalBreakHours.Minutes:D2}m" : "--")
+                                        </span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Overtime Duration</span>
+                                        <span class="fw-bold text-secondary">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Attendance Table -->
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white fw-bold">
+                        Detailed Attendance
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>SI No</th>
+                                        <th>Time</th>
+                                        <th>Type</th>
+                                        <th>Total Work Time</th>
+                                        <th>Break Duration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (hasData)
+                                    {
+                                        <!-- Clock In -->
+                                        <tr>
+                                            <td>1</td>
+                                            <td>@day.ClockInTime.ToString(@"hh\:mm")</td>
+                                            <td class="text-success fw-bold">Clock In</td>
+                                            <td rowspan="2">@FormatTimeSpan(day.TotalWorkedHours)</td>
+                                            <td rowspan="2">
+                                                @(day.Breaks != null && day.Breaks.Any() ? FormatTimeSpan(day.TotalBreakHours) : "No Break")
+                                            </td>
+                                        </tr>
+                                        <!-- Clock Out -->
+                                        <tr>
+                                            <td>2</td>
+                                            <td>@(day.ClockOutTime?.ToString(@"hh\:mm") ?? "--")</td>
+                                            <td class="text-danger fw-bold">Clock Out</td>
+                                        </tr>
+                                        @if (day.Breaks != null && day.Breaks.Any())
+                                        {
+                                            int count = 3;
+                                            foreach (var br in day.Breaks)
+                                            {
+                                                <!-- Break In -->
+                                                <tr>
+                                                    <td>@count</td>
+                                                    <td>@br.StartTime.ToString(@"hh\:mm")</td>
+                                                    <td class="text-warning fw-bold">Break In</td>
+                                                    <td colspan="2">@($"{(int)(br.EndTime - br.StartTime).TotalMinutes} Minutes")</td>
+                                                </tr>
+                                                count++;
+                                                <!-- Break Out -->
+                                                <tr>
+                                                    <td>@count</td>
+                                                    <td>@br.EndTime.ToString(@"hh\:mm")</td>
+                                                    <td class="text-warning fw-bold">Break Out</td>
+                                                    <td colspan="2"></td>
+                                                </tr>
+                                                count++;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <tr>
+                                            <td>1</td>
+                                            <td>--</td>
+                                            <td class="text-success fw-bold">Clock In</td>
+                                            <td rowspan="2">--</td>
+                                            <td rowspan="2">--</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2</td>
+                                            <td>--</td>
+                                            <td class="text-danger fw-bold">Clock Out</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+            @if (viewType == "monthly")
+            {
+                <div class="card border-0 bg-white shadow-sm mb-4">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold text-primary mb-0">Monthly Log - @selectedDate.ToString("MMMM yyyy")</h5>
+
+                            <div class="d-flex">
+                                <!-- Sort Order Toggle -->
+                                <div class="btn-group me-2">
+                                    <button class="btn btn-outline-secondary @(ViewBag.SortOrder == "asc" ? "active" : "")"
+                                            onclick="setSortOrder('asc')">
+                                        <i class="fas fa-sort-amount-down-alt"></i> 1st to @DateTime.DaysInMonth(selectedDate.Year, selectedDate.Month)th
+                                    </button>
+                                    <button class="btn btn-outline-secondary @(ViewBag.SortOrder != "asc" ? "active" : "")"
+                                            onclick="setSortOrder('desc')">
+                                        <i class="fas fa-sort-amount-up"></i> @DateTime.Today.Day.ToString()th to 1st
+                                    </button>
+                                </div>
+
+                                <!-- Other buttons remain the same -->
+                                <button class="btn btn-outline-secondary me-2" onclick="resetFilters()">
+                                    <i class="fas fa-filter"></i> Reset Filter
+                                </button>
+
+                                <button class="btn btn-primary me-2">
+                                    <i class="fas fa-check-circle"></i> BULK APPROVAL
+                                </button>
+
+                                <!-- Export Dropdown -->
+                                <div class="dropdown me-2">
+                                    <button class="btn btn-outline-primary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                                        <li>
+                                            <div class="p-2">
+                                                <h6 class="dropdown-header">Select Date Range</h6>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <input type="date" id="exportStartDate" class="form-control form-control-sm"
+                                                           value="@selectedDate.AddMonths(-1).ToString("yyyy-MM-dd")" />
+                                                    <span class="mx-2">To</span>
+                                                    <input type="date" id="exportEndDate" class="form-control form-control-sm"
+                                                           value="@selectedDate.ToString("yyyy-MM-dd")" />
+                                                </div>
+                                                <button class="btn btn-sm btn-primary w-100" onclick="exportData()">Export</button>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Filter Row -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="Present">Present</option>
+                                    <option value="NA">NA</option>
+                                    <option value="WO">Week Off</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" id="dateSearch" placeholder="Search by date...">
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" class="form-control" id="timeSearch" placeholder="Search by time...">
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-primary w-100" onclick="applyFilters()">
+                                    <i class="fas fa-search"></i> Apply Filters
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Monthly Attendance Table -->
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover mb-0" id="attendanceTable">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>In Time</th>
+                                        <th>Out Time</th>
+                                        <th>Work Duration</th>
+                                        <th>Break Duration</th>
+                                        <th>Break In</th>
+                                        <th>Break Out</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var record in Model)
+                                    {
+                                        var isEmpty = record.ClockInTime == TimeSpan.Zero;
+                                        var isWeekend = record.Date.DayOfWeek == DayOfWeek.Saturday || record.Date.DayOfWeek == DayOfWeek.Sunday;
+                                        var firstBreak = record.Breaks != null && record.Breaks.Any() ? record.Breaks.First() : null;
+                                        <tr class="attendance-row"
+                                            data-status="@(isEmpty ? "NA" : isWeekend ? "WO" : "Present")"
+                                            data-date="@record.Date.ToString("dd-MM-yyyy")"
+                                            data-in-time="@(isEmpty ? "" : record.ClockInTime.ToString(@"hh\:mm"))"
+                                            data-out-time="@(isEmpty || !record.ClockOutTime.HasValue ? "" : record.ClockOutTime.Value.ToString(@"hh\:mm"))">
+                                            <td>@record.Date.ToString("dd-MM-yyyy")</td>
+                                            <td>
+                                                @if (isEmpty)
+                                                {
+                                                    <span class="badge bg-secondary">NA</span>
+                                                }
+                                                else if (isWeekend)
+                                                {
+                                                    <span class="badge bg-info">WO</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-success">Present</span>
+                                                }
+                                            </td>
+                                            <td>@(isEmpty ? "--" : record.ClockInTime.ToString(@"hh\:mm"))</td>
+                                            <td>@(isEmpty || !record.ClockOutTime.HasValue ? "--" : record.ClockOutTime.Value.ToString(@"hh\:mm"))</td>
+                                            <td>@(isEmpty ? "--" : FormatTimeSpan(record.TotalWorkedHours))</td>
+                                            <td>@(isEmpty || record.Breaks == null || !record.Breaks.Any() ? "--" : FormatTimeSpan(record.TotalBreakHours))</td>
+                                            <td>@(firstBreak != null ? firstBreak.StartTime.ToString(@"hh\:mm") : "--")</td>
+                                            <td>@(firstBreak != null ? firstBreak.EndTime.ToString(@"hh\:mm") : "--")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div class="text-muted">
+                                Showing <span id="showingCount">@Model.Count()</span> of @Model.Count() entries
+                            </div>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="pageSizeDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Show <span id="pageSizeText">10</span>
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="pageSizeDropdown">
+                                    <li><a class="dropdown-item" href="#" onclick="changePageSize(10)">10</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="changePageSize(25)">25</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="changePageSize(50)">50</a></li>
+                                    <li><a class="dropdown-item" href="#" onclick="changePageSize(100)">100</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let debounceTimeout;
+        function navigateToDate(dateStr, viewType) {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                window.location.href = '@Url.Action("AttendanceLog", "Attendance")' + '?date=' + dateStr + '&viewType=' + viewType;
+            }, 300);
+        }
+
+        function navigateToMonth(monthStr) {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                const date = new Date(monthStr + '-01');
+                const dateStr = date.toISOString().split('T')[0];
+                window.location.href = '@Url.Action("AttendanceLog", "Attendance")' + '?date=' + dateStr + '&viewType=monthly';
+            }, 300);
+        }
+        let currentPage = 1;
+        let pageSize = 10;
+        let filteredRows = [];
+
+        // Initialize table
+        $(document).ready(function() {
+            updatePagination();
+        });
+
+        function applyFilters() {
+            const statusFilter = $('#statusFilter').val().toLowerCase();
+            const dateSearch = $('#dateSearch').val().toLowerCase();
+            const timeSearch = $('#timeSearch').val().toLowerCase();
+
+            filteredRows = $('.attendance-row').filter(function() {
+                const row = $(this);
+                const matchesStatus = !statusFilter || row.data('status').toLowerCase() === statusFilter;
+                const matchesDate = !dateSearch || row.data('date').toLowerCase().includes(dateSearch);
+                const matchesTime = !timeSearch ||
+                                   row.data('in-time').toLowerCase().includes(timeSearch) ||
+                                   row.data('out-time').toLowerCase().includes(timeSearch);
+
+                return matchesStatus && matchesDate && matchesTime;
+            });
+
+            currentPage = 1;
+            updatePagination();
+        }
+
+        function resetFilters() {
+            $('#statusFilter').val('');
+            $('#dateSearch').val('');
+            $('#timeSearch').val('');
+            filteredRows = $('.attendance-row');
+            currentPage = 1;
+            updatePagination();
+        }
+
+        function changePageSize(size) {
+            pageSize = size;
+            $('#pageSizeText').text(size);
+            currentPage = 1;
+            updatePagination();
+        }
+
+        function updatePagination() {
+            // Hide all rows
+            $('.attendance-row').hide();
+
+            // Use filtered rows or all rows if no filter applied
+            const rowsToShow = filteredRows.length > 0 ? filteredRows : $('.attendance-row');
+            const totalRows = rowsToShow.length;
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, totalRows);
+
+            // Show only rows for current page
+            rowsToShow.slice(startIndex, endIndex).show();
+
+            // Update showing count
+            $('#showingCount').text(`${startIndex + 1}-${endIndex}`);
+        }
+
+        function exportData() {
+            const startDate = $('#exportStartDate').val();
+            const endDate = $('#exportEndDate').val();
+
+            // Implement your export logic here
+            alert(`Exporting data from ${startDate} to ${endDate}`);
+            // window.location.href = '@Url.Action("ExportAttendance", "Attendance")' +
+            //     '?startDate=' + startDate + '&endDate=' + endDate;
+        }
+        function setSortOrder(order) {
+            // Get current URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentDate = urlParams.get('date') || '@selectedDate.ToString("yyyy-MM-dd")';
+
+            // Update URL with new sort order
+            window.location.href = '@Url.Action("AttendanceLog", "Attendance")' +
+                '?date=' + currentDate +
+                '&viewType=monthly' +
+                '&sortOrder=' + order;
+        }
+    </script>
+}
+
+@functions {
+    // Position of a time on the timeline (9 AM to 9 PM = 12 hours)
+    double GetPosition(double hours)
+    {
+        // Clamp the hours between 9 AM (9) and 9 PM (21)
+        double clampedHours = Math.Clamp(hours, 9, 21);
+        // Calculate position as a percentage of the 12-hour timeline (9 AM to 9 PM)
+        return ((clampedHours - 9) / 12.0) * 100;
+    }
+
+    // Width of the work duration on the timeline (9 AM to 9 PM = 12 hours)
+    double GetWorkWidth(Hrms_system.Models.DailyAttendanceViewModel day)
+    {
+        var end = day.ClockOutTime ?? DateTime.Now.TimeOfDay;
+        double startHours = Math.Max(9, day.ClockInTime.TotalHours);
+        double endHours = Math.Min(21, end.TotalHours);
+        // Calculate the duration in hours and convert to a percentage of the 12-hour timeline
+        double duration = endHours - startHours;
+        return (duration / 12.0) * 100;
+    }
+
+    // Position of the break start time on the timeline (9 AM to 9 PM = 12 hours)
+    double GetBreakPosition(double breakStartHours)
+    {
+        // Clamp the break start time between 9 AM and 9 PM
+        double clampedBreakStart = Math.Clamp(breakStartHours, 9, 21);
+        // Calculate the position as a percentage of the 12-hour timeline
+        return ((clampedBreakStart - 9) / 12.0) * 100;
+    }
+
+    // Width of the break duration on the timeline (9 AM to 9 PM = 12 hours)
+    double GetBreakWidth(Hrms_system.Models.BreakPeriodViewModel br)
+    {
+        // Calculate the break duration in hours
+        double breakDuration = (br.EndTime - br.StartTime).TotalHours;
+        // Ensure the break duration doesn't exceed the timeline bounds
+        double startHours = Math.Max(9, br.StartTime.TotalHours);
+        double endHours = Math.Min(21, br.EndTime.TotalHours);
+        breakDuration = endHours - startHours;
+        // Convert to a percentage of the 12-hour timeline
+        return (breakDuration / 12.0) * 100;
+    }
+
+    // Helper method to format TimeSpan as HH:MM
+    string FormatTimeSpan(TimeSpan timeSpan)
+    {
+        return string.Format("{0:D2}:{1:D2}", (int)timeSpan.TotalHours, (int)timeSpan.Minutes);
+    }
+}

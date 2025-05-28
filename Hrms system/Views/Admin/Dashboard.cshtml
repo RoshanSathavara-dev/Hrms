@@ -1,0 +1,103 @@
+﻿@model AdminAttendanceDashboardViewModel
+
+@{
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2>Attendance Dashboard</h2>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Employees</h5>
+                    <h2 class="card-text">@Model.TotalEmployees</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Clocked In Today</h5>
+                    <h2 class="card-text">@Model.ClockedInToday</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">Late Arrivals</h5>
+                    <h2 class="card-text">@Model.LateArrivalsToday</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">On Break Now</h5>
+                    <h2 class="card-text">@Model.OnBreakNow</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Recent Attendance</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Clock In</th>
+                                <th>Clock Out</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.RecentAttendance)
+                            {
+                                <tr>
+                                    <td>@item.EmployeeName</td>
+                                    <td>@item.ClockIn.ToString("g")</td>
+                                    <td>@(item.ClockOut?.ToString("g") ?? "--")</td>
+                                    <td>
+                                        <span class="badge @(item.ClockOut == null ? "bg-success" : "bg-secondary")">
+                                            @item.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <a asp-action="Policy" class="btn btn-primary btn-block mb-3">
+                        <i class="fas fa-cog me-2"></i>Attendance Policy
+                    </a>
+                    <a asp-controller="Admin" asp-action="ComplianceReport" class="btn btn-info btn-block mb-3">
+                        <i class="fas fa-chart-bar me-2"></i>Compliance Report
+                    </a>
+                    <a asp-action="ManageEmployee" class="btn btn-secondary btn-block mb-3">
+                        <i class="fas fa-users me-2"></i>Manage Employees
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

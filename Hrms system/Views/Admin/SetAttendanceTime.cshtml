@@ -1,0 +1,19 @@
+﻿@model AdminAttendanceViewModel
+
+<h2>Set Attendance Time</h2>
+
+<form asp-action="SetAttendanceTime" method="post">
+    <div>
+        <label>Employee ID:</label>
+        <input asp-for="EmployeeId" />
+    </div>
+    <div>
+        <label>Clock In Time:</label>
+        <input asp-for="ClockInTime" type="datetime-local" />
+    </div>
+    <div>
+        <label>Clock Out Time:</label>
+        <input asp-for="ClockOutTime" type="datetime-local" />
+    </div>
+    <button type="submit">Set Time</button>
+</form>

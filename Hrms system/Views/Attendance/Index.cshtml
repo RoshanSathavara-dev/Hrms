@@ -1,0 +1,80 @@
+﻿ @model IEnumerable<Hrms_system.Models.Attendance>
+
+@{
+    ViewData["Title"] = "Attendance Records";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-4"><i class="fas fa-clock me-2"></i> My Attendance Records</h2>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th>Date</th>
+                        <th>Clock In</th>
+                        <th>Clock Out</th>
+                        <th>Total Work Time</th>
+                        <th>Break Duration</th>
+                    </tr>
+                </thead>
+                <tbody class="text-center">
+                    @foreach (var record in Model)
+                    {
+                        <tr>
+                            <!-- ✅ Display Attendance Date -->
+                            <td>@record.ClockIn.ToString("yyyy-MM-dd")</td>
+
+                            <!-- ✅ Display Clock In Time -->
+                            <td>@record.ClockIn.ToString("hh:mm:ss tt")</td>
+
+                            <!-- ✅ Display Clock Out Time or "Still Working" -->
+                            <td>
+                                @if (record.ClockOut.HasValue)
+                                {
+                                    @record.ClockOut.Value.ToString("hh:mm:ss tt")
+                                }
+                                else
+                                {
+                                    @Html.Raw("<span class='text-danger'>Still Working</span>")
+                                }
+                            </td>
+
+                            <!-- ✅ Calculate and Display Total Work Hours (hh:mm:ss) -->
+                            <td>
+                                @if (record.TotalHours.HasValue)
+                                {
+                                    @record.TotalHours.Value.ToString(@"hh\:mm\:ss")
+                                }
+                                else
+                                {
+                                    @Html.Raw("<span class='text-warning'>Pending</span>")
+                                }
+                            </td>
+
+                            <!-- ✅ Display Break Duration in hh:mm:ss -->
+                            <td>
+                                @if (record.TotalBreakDuration > TimeSpan.Zero)
+                                {
+                                    @record.TotalBreakDuration.ToString(@"hh\:mm\:ss")
+                                }
+                                else
+                                {
+                                    @Html.Raw("<span class='text-muted'>No Break</span>")
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-info text-center">
+            <i class="fas fa-info-circle"></i> No attendance records found.
+        </div>
+    }
+</div>

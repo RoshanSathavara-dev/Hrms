@@ -1,0 +1,106 @@
+﻿@model Hrms_system.Models.PayrollViewModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Salary Slip</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 30px;
+        }
+
+        .slip-container {
+            border: 1px solid #333;
+            padding: 30px;
+            width: 700px;
+            margin: auto;
+        }
+
+        .header {
+            text-align: center;
+        }
+
+        .header img {
+            max-height: 80px;
+        }
+
+        .details, .salary {
+            margin-top: 30px;
+        }
+
+        .details td, .salary td {
+            padding: 8px 15px;
+        }
+
+        .salary-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .salary-table th, .salary-table td {
+            border: 1px solid #aaa;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="slip-container">
+        <div class="header">
+            <img src="~/images/company-logo.png" alt="Company Logo" />
+            <h2>Salary Slip</h2>
+            <p>For the month of @DateTime.Now.ToString("MMMM yyyy")</p>
+        </div>
+
+        <div class="details">
+            <table>
+                <tr>
+                    <td><strong>Employee ID:</strong></td>
+                    <td>@Model.EmployeeNumber</td>
+                    <td><strong>Name:</strong></td>
+                    <td>@Model.FullName</td>
+                </tr>
+                <tr>
+                    <td><strong>Department:</strong></td>
+                    <td>@Model.Department</td>
+                    <td><strong>Status:</strong></td>
+                    <td>@Model.Status</td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="salary">
+            <table class="salary-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Basic Salary</td>
+                        <td>@Model.Salary.ToString("C")</td>
+                    </tr>
+                    <tr>
+                        <td>Allowances</td>
+                        <td>@Model.Allowances.ToString("C")</td>
+                    </tr>
+                    <tr>
+                        <td>Deductions</td>
+                        <td>@Model.Deductions.ToString("C")</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Net Pay</strong></td>
+                        <td><strong>@Model.NetPay.ToString("C")</strong></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

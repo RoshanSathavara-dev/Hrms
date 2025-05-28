@@ -1,0 +1,37 @@
+﻿@model List<Hrms_system.Models.LeaveBalanceViewModel>
+
+<h2>Monthly Leave Balances</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Employee</th>
+            <th>Leave Type</th>
+            <th>Total Leaves</th>
+            <th>Used Leaves</th>
+            <th>Pending Leaves</th>
+            <th>Available Leaves</th>
+            <th>Carry Forwarded Leaves</th>
+
+            <th>Year</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var balance in Model)
+        {
+            <tr>
+                <td>@balance.EmployeeName</td>
+                <td>@balance.LeaveTypeName</td>
+                <td>@balance.TotalLeaves</td>
+                <td>@balance.UsedLeaves</td>
+                <td>@balance.PendingLeaves</td>
+                <td>@balance.AvailableLeaves</td>
+                <td>@balance.CarryForwardedLeaves</td>
+             
+                <td>@balance.Year</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Index" class="btn btn-primary">Back to Dashboard</a>

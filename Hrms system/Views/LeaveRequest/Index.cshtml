@@ -1,0 +1,196 @@
+﻿@model IEnumerable<Hrms_system.Models.LeaveRequest>
+
+@{
+    ViewData["Title"] = "Leave Requests";
+    Layout = "_Layout";
+}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+
+
+<h2>Leave Requests</h2>
+
+<!-- Apply for Leave Button -->
+<button type="button" class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#applyLeaveModal">
+    Apply for Leave
+</button>
+
+<!-- Leave Requests Table -->
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>#</th>
+            <th>Leave Type</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Days</th>
+            <th>Applied On</th>
+            <th>Status</th> 
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model.Any())
+        {
+            int counter = 1;
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@counter</td>
+                    <td>@item.LeaveType?.Name</td> <!-- ✅ Show Leave Type Name -->
+                    <td>@item.StartDate.ToString("yyyy-MM-dd")</td> <!-- ✅ Show Start Date -->
+                    <td>@item.EndDate.ToString("yyyy-MM-dd")</td> <!-- ✅ Show End Date -->
+                    <td>@item.Days</td>
+                    <td>@item.AppliedOn.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        <span class="badge bg-@(item.Status == "Approved" ? "success" : item.Status == "Rejected" ? "danger" : "warning")">
+                            @item.Status
+                        </span>
+                    </td>
+                </tr>
+                counter++;
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="5" class="text-center text-danger">No leave requests found.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Bootstrap Modal for Apply Leave -->
+<!-- Bootstrap Modal for Apply Leave -->
+<div class="modal fade" id="applyLeaveModal" tabindex="-1" aria-labelledby="applyLeaveModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="applyLeaveModalLabel">Apply Leave</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="applyLeaveForm">
+                    <div class="mb-3">
+                        <label class="form-label">Leave Type</label>
+                        @if (ViewBag.LeaveTypes != null && ((IEnumerable<LeaveType>)ViewBag.LeaveTypes).Any())
+                        {
+                            <select id="leaveType" class="form-select" asp-items="@(new SelectList(ViewBag.LeaveTypes, "Id", "Name"))">
+                                <option value="">Select Leave Type</option>
+                            </select>
+                        }
+                        else
+                        {
+                            <select id="leaveType" class="form-select" disabled>
+                                <option value="">No leave types available</option>
+                            </select>
+                            <small class="text-danger">Contact HR to configure leave types</small>
+                        }
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Date</label>
+                            <input type="date" id="startDate" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Start Half</label>
+                            <select id="startHalf" class="form-select" required>
+                                <option value="First">First Half</option>
+                                <option value="Second">Second Half</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">End Date</label>
+                            <input type="date" id="endDate" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">End Half</label>
+                            <select id="endHalf" class="form-select" required>
+                                <option value="First">First Half</option>
+                                <option value="Second">Second Half</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Write your Reason</label>
+                        <textarea id="reason" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="applyLeaveBtn">Apply</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- AJAX Script for Applying Leave -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+        toastr.options = {
+        "closeButton": true,
+        "positionClass": "toast-top-right",
+        "timeOut": "3000"
+    };
+
+    $(document).ready(function () {
+    $("#applyLeaveBtn").click(function() {
+        const $btn = $(this);
+        $btn.prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
+
+    const leaveData = {
+        LeaveTypeId: parseInt($("#leaveType").val()),
+        StartDate: $("#startDate").val(),
+        EndDate: $("#endDate").val(),
+        Reason: $("#reason").val(),
+     StartHalf: $("#startHalf").val(),
+                EndHalf: $("#endHalf").val()
+    };
+
+        $.ajax({
+            url: "/LeaveRequest/Create",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify(leaveData),
+    success: function (response) {
+        console.log("Success response:", response);
+        if (response && response.success)  {
+            showNotification('success', response.Message);
+            $("#applyLeaveModal").modal("hide");
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            const errorMsg = response?.Error || "Request failed";
+            const errors = response?.Errors || [];
+            showNotification('error', errorMsg, errors);
+        }
+    },
+    error: function (xhr) {
+        console.error("Error response:", xhr.responseText);
+        showNotification('error', `Server error: ${xhr.statusText}`);
+    },
+
+            complete: function() {
+                $btn.prop("disabled", false).text("Apply");
+            }
+        });
+    });
+
+    // Safe notification function
+    function showNotification(type, message, additionalMessages = []) {
+        if (typeof toastr !== 'undefined' && toastr[type]) {
+            toastr[type](message);
+            additionalMessages.forEach(msg => toastr[type](msg));
+        } else {
+            // Fallback to console and alerts
+            console[type](message);
+            additionalMessages.forEach(msg => console[type](msg));
+            alert(`${type.toUpperCase()}: ${message}`);
+        }
+    }
+    });
+
+</script>
+

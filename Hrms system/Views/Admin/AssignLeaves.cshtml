@@ -1,0 +1,222 @@
+﻿@model Hrms_system.Models.AssignLeavesViewModel
+
+@{
+    ViewData["Title"] = "Assign Leaves";
+    Layout = "_AdminLayout";
+}
+
+<style>
+    /* Custom badge colors for better visibility */
+    .badge-custom-1 {
+        background-color: #28a745;
+        color: white;
+    }
+    /* Green */
+    .badge-custom-2 {
+        background-color: #17a2b8;
+        color: white;
+    }
+    /* Cyan */
+    .badge-custom-3 {
+        background-color: #007bff;
+        color: white;
+    }
+    /* Blue */
+    .badge-custom-4 {
+        background-color: #dc3545;
+        color: white;
+    }
+    /* Red */
+    .badge-custom-5 {
+        background-color: #ffc107;
+        color: black;
+    }
+    /* Yellow */
+</style>
+
+<div class="container-fluid">
+    <h2>Leave Rules</h2>
+
+    <div class="card">
+        <div class="card-header">
+            <button type="button" class="btn btn-primary" id="assignLeaveRulesBtn" disabled>
+                Assign Leave Rules
+            </button>
+            <button type="button" class="btn btn-danger float-right" id="bulkDeleteBtn" disabled>
+                <i class="fas fa-trash"></i> Bulk Delete
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="thead-light">
+                        <tr>
+                            <th><input type="checkbox" id="selectAll" /></th>
+                            <th>ID</th>
+                            <th>Employee Name</th>
+                            <th>Department</th>
+                            <th>Position</th>
+                            <th>Rules Applied</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var employee in Model.Employees)
+                        {
+                            <tr>
+                                <td>
+                                    <input type="checkbox" class="employee-checkbox" value="@employee.Id" />
+                                </td>
+                                <td>@employee.Id</td>
+                                <td>@employee.FullName</td>
+                                <td>@employee.Department</td>
+                                <td>@employee.Position</td>
+                                <td>
+                                    @{
+                                        var assignments = Model.Assignments.Where(a => a.EmployeeId == employee.Id && a.IsActive).ToList();
+                                        for (int i = 0; i < assignments.Count; i++)
+                                        {
+                                            var assignment = assignments[i];
+                                            var leaveType = Model.LeaveTypes.FirstOrDefault(lt => lt.Id == assignment.LeaveTypeId);
+                                            if (leaveType != null)
+                                            {
+                                                // Cycle through custom colors (1 to 5)
+                                                var colorIndex = (i % 5) + 1;
+                                                <span class="badge badge-custom-@colorIndex mr-1">@leaveType.Name</span>
+                                            }
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Assigning Leave Rules -->
+<div class="modal fade" id="assignLeaveModal" tabindex="-1" role="dialog" aria-labelledby="assignLeaveModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="assignLeaveModalLabel">Assign Leave Rules</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="assignLeaveForm">
+                    @foreach (var leaveType in Model.LeaveTypes)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input leave-type-checkbox" type="checkbox" name="leaveTypeIds" value="@leaveType.Id" id="leaveType_@leaveType.Id">
+                            <label class="form-check-label" for="leaveType_@leaveType.Id">
+                                @leaveType.Name (@leaveType.LeavesAllowedPerYear days/year)
+                            </label>
+                        </div>
+                    }
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="applyLeaveRulesBtn">Apply</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Select All checkbox functionality
+            $('#selectAll').on('change', function () {
+                $('.employee-checkbox').prop('checked', $(this).prop('checked'));
+                toggleButtons();
+            });
+
+            // Individual checkbox functionality
+            $('.employee-checkbox').on('change', function () {
+                $('#selectAll').prop('checked', $('.employee-checkbox:checked').length === $('.employee-checkbox').length);
+                toggleButtons();
+            });
+
+            // Enable/disable buttons based on selection
+            function toggleButtons() {
+                const selectedCount = $('.employee-checkbox:checked').length;
+                $('#assignLeaveRulesBtn').prop('disabled', selectedCount === 0);
+                $('#bulkDeleteBtn').prop('disabled', selectedCount === 0);
+            }
+
+            // Open modal when clicking "Assign Leave Rules"
+            $('#assignLeaveRulesBtn').on('click', function () {
+                $('#assignLeaveModal').modal('show');
+            });
+
+            // Handle Apply button in modal
+            $('#applyLeaveRulesBtn').on('click', function () {
+                const selectedEmployees = $('.employee-checkbox:checked').map(function () {
+                    return $(this).val();
+                }).get();
+
+                const selectedLeaveTypes = $('.leave-type-checkbox:checked').map(function () {
+                    return $(this).val();
+                }).get();
+
+                if (selectedLeaveTypes.length === 0) {
+                    alert('Please select at least one leave type.');
+                    return;
+                }
+
+                // Send AJAX request to assign leave types to selected employees
+                $.ajax({
+                    url: '@Url.Action("AssignMultipleLeaves", "Admin")',
+                    type: 'POST',
+                    data: {
+                        employeeIds: selectedEmployees,
+                        leaveTypeIds: selectedLeaveTypes,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            location.reload(); // Refresh the page to reflect changes
+                        } else {
+                            alert('Error assigning leave rules: ' + response.message);
+                        }
+                    },
+                    error: function () {
+                        alert('An error occurred while assigning leave rules.');
+                    }
+                });
+            });
+
+            // Handle Bulk Delete
+            $('#bulkDeleteBtn').on('click', function () {
+                const selectedEmployees = $('.employee-checkbox:checked').map(function () {
+                    return $(this).val();
+                }).get();
+
+                if (confirm('Are you sure you want to delete leave assignments for the selected employees?')) {
+                    $.ajax({
+                        url: '@Url.Action("BulkDeleteLeaveAssignments", "Admin")',
+                        type: 'POST',
+                        data: {
+                            employeeIds: selectedEmployees,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (response) {
+                            if (response.success) {
+                                location.reload();
+                            } else {
+                                alert('Error deleting leave assignments: ' + response.message);
+                            }
+                        },
+                        error: function () {
+                            alert('An error occurred while deleting leave assignments.');
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+}

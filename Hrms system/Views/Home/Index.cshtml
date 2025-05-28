@@ -1,0 +1,833 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using System.Globalization
+@inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
+
+@{
+    var attendance = ViewBag.UserAttendance as Hrms_system.Models.Attendance;
+    bool isClockedIn = attendance != null && attendance.ClockOut == null;
+    var clockInTime = attendance?.ClockIn;
+    bool isOnBreak = attendance?.BreakStart != null;
+    var breakStartTime = attendance?.BreakStart;
+    var totalBreakDuration = attendance?.TotalBreakDuration ?? TimeSpan.Zero;
+}
+
+<div class="container">
+    <!-- Welcome Header -->
+    @{
+        var user = await UserManager.GetUserAsync(User);
+        var claims = user != null ? await UserManager.GetClaimsAsync(user) : new List<System.Security.Claims.Claim>();
+        var fullName = claims.FirstOrDefault(c => c.Type == "FullName")?.Value ?? "User";
+    }
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">Welcome, @fullName!</h2>
+                    <p class="text-muted mb-0">Here's what's happening today</p>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-primary rounded-pill px-3 py-2">
+                        <i class="fas fa-calendar-day me-2"></i>@DateTime.Now.ToString("dddd, MMMM dd, yyyy")
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔹 Logout Button -->
+    @if (SignInManager.IsSignedIn(User))
+    {
+        <div class="d-flex justify-content-end mt-3">
+            <form asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit" class="btn btn-outline-danger px-4 py-2">
+                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                </button>
+            </form>
+        </div>
+    }
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Worked This Month</h6>
+                            <h3 class="mb-0">104.5 hrs</h3>
+                        </div>
+                        <div class="bg-primary bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-clock text-primary fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Leave Balance</h6>
+                            <h3 class="mb-0">12 days</h3>
+                        </div>
+                        <div class="bg-success bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-umbrella-beach text-success fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Pending Requests</h6>
+                            <h3 class="mb-0">3</h3>
+                        </div>
+                        <div class="bg-warning bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-tasks text-warning fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="text-muted mb-2">Salary Status</h6>
+                            <h3 class="mb-0">Paid</h3>
+                        </div>
+                        <div class="bg-info bg-opacity-10 p-3 rounded">
+                            <i class="fas fa-money-bill-wave text-info fs-4"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Attendance Section -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-fingerprint me-2"></i>Today's Attendance</h5>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <!-- Work Duration Timer -->
+                        <div class="attendance-clock mb-3 fw-bold fs-4 p-2 rounded bg-light border" id="workTimer">00:00:00</div>
+                        <div id="notification" class="notification" style="display: none;"></div>
+                        <!-- Status Badge -->
+                        <div class="mb-4" id="statusSection">
+                            <span class="badge bg-danger badge-attendance p-2">
+                                <i class="fas fa-times-circle me-1"></i> Currently Logged Out
+                            </span>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-center gap-3">
+                            <button class="btn btn-success px-4 py-2" id="clockBtn">
+                                <i class="fas fa-sign-in-alt me-2"></i>Clock In
+                            </button>
+                            <button class="btn btn-info px-4 py-2" id="breakBtn" disabled style="display: none;">
+                                <i class="fas fa-coffee me-2"></i>Start Break
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Time Details -->
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h6 class="text-muted">Clock In</h6>
+                            <h4 id="clockInTime">--:-- --</h4>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="text-muted">Last Break</h6>
+                            <h4 id="lastBreakTime">-</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Quick Actions -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a asp-controller="LeaveRequest" asp-action="Index" class="card quick-action-card h-100 text-decoration-none">
+                                <div class="card-body text-center py-4">
+                                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                                        <i class="fas fa-calendar-plus text-primary fs-3"></i>
+                                    </div>
+                                    <h5>Request Leave</h5>
+                                    <p class="text-muted mb-0">Apply for time off</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a asp-controller="Salary" asp-action="Slip" class="card quick-action-card h-100 text-decoration-none">
+                                <div class="card-body text-center py-4">
+                                    <div class="bg-success bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                                        <i class="fas fa-file-invoice-dollar text-success fs-3"></i>
+                                    </div>
+                                    <h5>Salary Slip</h5>
+                                    <p class="text-muted mb-0">View/download payslip</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a asp-controller="Profile" asp-action="Index" class="card quick-action-card h-100 text-decoration-none">
+                                <div class="card-body text-center py-4">
+                                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                                        <i class="fas fa-user-edit text-warning fs-3"></i>
+                                    </div>
+                                    <h5>Update Profile</h5>
+                                    <p class="text-muted mb-0">Edit personal info</p>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="#" class="card quick-action-card h-100 text-decoration-none">
+                                <div class="card-body text-center py-4">
+                                    <div class="bg-info bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                                        <i class="fas fa-question-circle text-info fs-3"></i>
+                                    </div>
+                                    <h5>Get Help</h5>
+                                    <p class="text-muted mb-0">HR support</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Salary and Recent Activity -->
+    <div class="row">
+        <!-- Salary Slip Section -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Recent Salary Slip</h5>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="salary-slip-preview p-3 mb-3" style="background-color: #f8f9fa; border-radius: 8px;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h5 class="mb-0">Salary for @DateTime.Now.ToString("MMMM yyyy")</h5>
+                                <small class="text-muted">Issued on @DateTime.Now.ToString("MMM dd, yyyy")</small>
+                            </div>
+                            <span class="badge bg-success">Paid</span>
+                        </div>
+
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <small class="text-muted">Basic Salary</small>
+                                <h6>$4,500.00</h6>
+                            </div>
+                            <div class="col-6 text-end">
+                                <small class="text-muted">Net Pay</small>
+                                <h6>$4,125.50</h6>
+                            </div>
+                        </div>
+
+                        <div class="progress mb-3" style="height: 6px;">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 70%" aria-valuenow="70" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 15%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: 10%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar bg-danger" role="progressbar" style="width: 5%" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-download me-1"></i> Download
+                            </button>
+                            <button class="btn btn-sm btn-primary">
+                                <i class="fas fa-eye me-1"></i> View Details
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Next payroll: @DateTime.Now.AddMonths(1).ToString("MMM dd, yyyy")</small>
+                        <a href="#" class="btn btn-sm btn-link">Salary History</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Activity</h5>
+                    <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Activity</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>@DateTime.Now.AddDays(-1).ToString("MMM dd, yyyy")</td>
+                                    <td>Salary credited for @DateTime.Now.AddMonths(-1).ToString("MMMM yyyy")</td>
+                                    <td><span class="badge bg-success">Salary</span></td>
+                                    <td><span class="badge bg-success">Completed</span></td>
+                                </tr>
+                                <tr>
+                                    <td>@DateTime.Now.AddDays(-2).ToString("MMM dd, yyyy")</td>
+                                    <td>Annual Leave Request</td>
+                                    <td><span class="badge bg-primary">Leave</span></td>
+                                    <td><span class="badge bg-warning">Pending</span></td>
+                                </tr>
+                                <tr>
+                                    <td>@DateTime.Now.AddDays(-3).ToString("MMM dd, yyyy")</td>
+                                    <td>Attendance Regularization</td>
+                                    <td><span class="badge bg-info">Attendance</span></td>
+                                    <td><span class="badge bg-success">Approved</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // DOM Elements
+            const clockBtn = document.getElementById("clockBtn");
+            const breakBtn = document.getElementById("breakBtn");
+            const workTimerEl = document.getElementById("workTimer");
+            const statusSection = document.getElementById("statusSection");
+            const clockInTimeEl = document.getElementById("clockInTime");
+            const lastBreakTimeEl = document.getElementById("lastBreakTime");
+            const notificationEl = document.getElementById("notification");
+
+            // State Variables
+            let state = {
+                isClockedIn: false,
+                isOnBreak: false,
+                clockInTime: null,
+                breakStartTime: null,
+                totalWorkSeconds: 0,
+                currentBreakSeconds: 0,
+                totalBreakSeconds: 0
+            };
+
+            // Timer References
+            let timers = {
+                workTimer: null,
+                breakTimer: null,
+                syncTimer: null
+            };
+
+            // Initialize
+            initAttendance();
+
+            // ======================
+            // Core Functions
+            // ======================
+
+            async function initAttendance() {
+                showLoading(true);
+                try {
+                    await restoreAttendanceState();
+                    startSyncTimer();
+                } catch (error) {
+                    showError("Failed to initialize attendance: " + error.message);
+                } finally {
+                    showLoading(false);
+                }
+            }
+
+        // async function restoreAttendanceState() {
+        //     try {
+        //         const attendanceData = await checkAttendanceStatus();
+        //         if (!attendanceData) return;
+
+        //         resetAllTimers();
+
+        //         if (attendanceData.isClockedIn) {
+        //             state.isClockedIn = true;
+        //             state.clockInTime = new Date(attendanceData.clockInTime);
+
+        //             // ✅ Get total break duration from server
+        //             state.totalBreakSeconds = attendanceData.totalBreakDuration
+        //                 ? Math.floor(attendanceData.totalBreakDuration / 1000)
+        //                 : 0;
+
+        //             const now = new Date();
+
+        //             if (attendanceData.isOnBreak && attendanceData.breakStartTime) {
+        //                 state.isOnBreak = true;
+        //                 state.breakStartTime = new Date(attendanceData.breakStartTime);
+
+        //                 // ✅ Calculate time worked before break started
+        //                 const workBeforeBreak = (state.breakStartTime - state.clockInTime) / 1000;
+        //                 state.totalWorkSeconds = Math.max(0, Math.floor(workBeforeBreak));
+
+        //                 // ✅ Continue showing work time during break
+        //                 updateWorkTimerDisplay();
+        //                 startBreakTimer();
+        //             } else {
+        //                 state.isOnBreak = false;
+        //                 state.currentBreakSeconds = 0;
+
+        //                 // ✅ Work time should continue even when a break happens
+        //                 const totalElapsed = (now - state.clockInTime) / 1000;
+        //                 state.totalWorkSeconds = Math.max(0, Math.floor(totalElapsed - state.totalBreakSeconds));
+
+        //                 startWorkTimer();
+        //             }
+
+        //             updateUI();
+        //         } else {
+        //             resetState();
+        //             updateUI();
+        //         }
+        //     } catch (error) {
+        //         console.error("Error restoring attendance state:", error);
+        //         showError("Failed to restore attendance state");
+        //     }
+        // }
+
+                async function restoreAttendanceState() {
+            try {
+                const attendanceData = await checkAttendanceStatus();
+                if (!attendanceData) return;
+
+                resetAllTimers();
+
+                if (attendanceData.isClockedIn) {
+                    state.isClockedIn = true;
+                    state.clockInTime = new Date(attendanceData.clockInTime);
+
+                    // Get total break duration from server
+                    state.totalBreakSeconds = attendanceData.totalBreakDuration
+                        ? Math.floor(attendanceData.totalBreakDuration / 1000)
+                        : 0;
+
+                    const now = new Date();
+
+                    if (attendanceData.isOnBreak && attendanceData.breakStartTime) {
+                        state.isOnBreak = true;
+                        state.breakStartTime = new Date(attendanceData.breakStartTime);
+
+                        // Correct: work time at the moment break started, minus all previous breaks
+                        const workBeforeBreak = (state.breakStartTime - state.clockInTime) / 1000 - state.totalBreakSeconds;
+                        state.totalWorkSeconds = Math.max(0, Math.floor(workBeforeBreak));
+
+                        updateWorkTimerDisplay();
+                        startBreakTimer();
+                    } else {
+                        state.isOnBreak = false;
+                        state.currentBreakSeconds = 0;
+
+                        // Work time = total elapsed - all breaks
+                        const totalElapsed = (now - state.clockInTime) / 1000;
+                        state.totalWorkSeconds = Math.max(0, Math.floor(totalElapsed - state.totalBreakSeconds));
+
+                        startWorkTimer();
+                    }
+
+                    updateUI();
+                } else {
+                    resetState();
+                    updateUI();
+                }
+            } catch (error) {
+                console.error("Error restoring attendance state:", error);
+                showError("Failed to restore attendance state");
+            }
+        }
+
+
+            function resetState() {
+                state = {
+                    isClockedIn: false,
+                    isOnBreak: false,
+                    clockInTime: null,
+                    breakStartTime: null,
+                    totalWorkSeconds: 0,
+                    currentBreakSeconds: 0,
+                    totalBreakSeconds: 0
+                };
+            }
+
+            function resetAllTimers() {
+                if (timers.workTimer) clearInterval(timers.workTimer);
+                if (timers.breakTimer) clearInterval(timers.breakTimer);
+                timers.workTimer = null;
+                timers.breakTimer = null;
+            }
+
+            // ======================
+            // Timer Functions
+            // ======================
+
+            function startWorkTimer() {
+                if (!timers.workTimer) {
+                    timers.workTimer = setInterval(() => {
+                        state.totalWorkSeconds++;
+                        updateWorkTimerDisplay();
+                    }, 1000);
+                }
+            }
+
+        // function startBreakTimer() {
+        //     if (!timers.breakTimer) {
+        //         const now = new Date();
+
+        //         // ✅ Ensure work time does not reset to 0
+        //         const workBeforeBreak = (state.breakStartTime - state.clockInTime) / 1000;
+        //         state.totalWorkSeconds = Math.max(0, Math.floor(workBeforeBreak));
+        //         updateWorkTimerDisplay();
+
+        //         // ✅ Continue break timer
+        //         state.currentBreakSeconds = Math.floor((now - state.breakStartTime) / 1000);
+        //         timers.breakTimer = setInterval(() => {
+        //             state.currentBreakSeconds++;
+        //             updateBreakTimerDisplay();
+        //         }, 1000);
+        //     }
+        // }
+
+                function startBreakTimer() {
+            if (!timers.breakTimer) {
+                const now = new Date();
+
+                // Do NOT update state.totalWorkSeconds here! It should stay frozen during break.
+
+                // Continue break timer
+                state.currentBreakSeconds = Math.floor((now - state.breakStartTime) / 1000);
+                timers.breakTimer = setInterval(() => {
+                    state.currentBreakSeconds++;
+                    updateBreakTimerDisplay();
+                }, 1000);
+            }
+        }
+
+
+            function startSyncTimer() {
+                if (!timers.syncTimer) {
+                    timers.syncTimer = setInterval(async () => {
+                        try {
+                            await restoreAttendanceState();
+                        } catch (error) {
+                            console.error("Sync error:", error);
+                        }
+                    }, 30000); // Sync every 30 seconds
+                }
+            }
+
+            // ======================
+            // UI Functions
+            // ======================
+
+            function updateUI() {
+                if (state.isClockedIn) {
+                    // Update clock in time display
+                    clockInTimeEl.textContent = state.clockInTime.toLocaleTimeString('en-US', {
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    });
+
+                    // Update status
+                    statusSection.innerHTML = `
+                        <span class="badge bg-success p-2">
+                            <i class="fas fa-check-circle me-1"></i> Currently Clocked In
+                        </span>
+                    `;
+
+                    // Update clock button
+                    clockBtn.innerHTML = '<i class="fas fa-sign-out-alt me-2"></i>Clock Out';
+                    clockBtn.classList.remove('btn-success');
+                    clockBtn.classList.add('btn-danger');
+
+                    // Update break button
+                    breakBtn.style.display = 'inline-block';
+                    breakBtn.disabled = false;
+                    updateBreakButtonUI();
+
+                    // Update timers
+                    updateWorkTimerDisplay();
+                    updateBreakTimerDisplay();
+                } else {
+                    // User is clocked out
+                    statusSection.innerHTML = `
+                        <span class="badge bg-danger p-2">
+                            <i class="fas fa-times-circle me-1"></i> Currently Logged Out
+                        </span>
+                    `;
+
+                    clockBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Clock In';
+                    clockBtn.classList.remove('btn-danger');
+                    clockBtn.classList.add('btn-success');
+
+                    clockInTimeEl.textContent = '--:-- --';
+                    workTimerEl.textContent = '00:00:00';
+                    lastBreakTimeEl.textContent = '00:00:00';
+
+                    breakBtn.style.display = 'none';
+                }
+            }
+
+            function updateBreakButtonUI() {
+                if (state.isOnBreak) {
+                    breakBtn.innerHTML = '<i class="fas fa-coffee me-2"></i>End Break';
+                    breakBtn.classList.remove('btn-info');
+                    breakBtn.classList.add('btn-warning');
+                } else {
+                    breakBtn.innerHTML = '<i class="fas fa-coffee me-2"></i>Start Break';
+                    breakBtn.classList.remove('btn-warning');
+                    breakBtn.classList.add('btn-info');
+                }
+            }
+
+        // Update the work timer display to prevent negative values
+        function updateWorkTimerDisplay() {
+            workTimerEl.textContent = formatTime(Math.max(0, state.totalWorkSeconds)); // Ensure no negative values
+        }
+        function updateBreakTimerDisplay() {
+            const totalBreakDisplay = state.totalBreakSeconds + state.currentBreakSeconds;
+            lastBreakTimeEl.textContent = formatTime(totalBreakDisplay);
+        }
+
+
+            function formatTime(totalSeconds) {
+                const hours = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+                const minutes = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+                const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+                return `${hours}:${minutes}:${seconds}`;
+            }
+
+            function showLoading(isLoading) {
+                if (isLoading) {
+                    document.body.classList.add('loading');
+                } else {
+                    document.body.classList.remove('loading');
+                }
+            }
+
+            function showNotification(message, isError = false) {
+                notificationEl.textContent = message;
+                notificationEl.className = `notification ${isError ? 'error' : 'success'}`;
+                notificationEl.style.display = 'block';
+
+                setTimeout(() => {
+                    notificationEl.style.display = 'none';
+                }, 5000);
+            }
+
+            function showError(message) {
+                showNotification(message, true);
+                console.error(message);
+            }
+
+            // ======================
+            // API Functions
+            // ======================
+
+            async function checkAttendanceStatus() {
+                try {
+                    const response = await fetch("/Attendance/GetAttendanceStatus");
+                    if (!response.ok) throw new Error("Failed to get attendance status");
+
+                    const data = await response.json();
+                    return data;
+                } catch (error) {
+                    console.error("Error checking attendance status:", error);
+                    throw error;
+                }
+            }
+
+        breakBtn.addEventListener("click", async function () {
+            try {
+                if (!state.isClockedIn) {
+                    showError("You must be clocked in to take a break.");
+                    return;
+                }
+
+                showLoading(true);
+                breakBtn.disabled = true;
+
+                if (state.isOnBreak) {
+                    // ====================== END BREAK ======================
+                    const response = await fetch('/Attendance/EndBreak', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok) {
+                        showError(result.message || "Failed to end break");
+                        return;
+                    }
+
+                    state.isOnBreak = false;
+                    state.breakStartTime = null;
+
+                    // ✅ Immediately fetch fresh attendance data to ensure correct time
+                    await restoreAttendanceState();
+
+                    showNotification("Break ended successfully");
+                } else {
+                    // ====================== START BREAK ======================
+                    const response = await fetch('/Attendance/StartBreak', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    });
+
+                    const result = await response.json();
+                    if (!response.ok) {
+                        showError(result.message || "Failed to start break");
+                        return;
+                    }
+
+                    state.isOnBreak = true;
+                    state.breakStartTime = new Date(result.breakStartTime);
+
+                    // ✅ Stop Work Timer and Start Break Timer
+                    clearInterval(timers.workTimer);
+                    timers.workTimer = null;
+                    startBreakTimer();
+
+                    showNotification("Break started successfully");
+                }
+
+                updateUI();
+            } catch (error) {
+                console.error('Break action error:', error);
+                showError(error.message);
+            } finally {
+                showLoading(false);
+                breakBtn.disabled = false;
+            }
+        });
+
+
+
+        clockBtn.addEventListener("click", async function () {
+            try {
+                showLoading(true);
+                clockBtn.disabled = true;
+
+                if (!state.isClockedIn) {
+                    // ✅ Clock In
+                    const response = await fetch("/Attendance/ClockIn", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.message || "Clock in failed");
+                    }
+
+                    state.isClockedIn = true;
+                    state.clockInTime = new Date(data.clockInTime);
+                    state.totalWorkSeconds = 0;
+                    state.totalBreakSeconds = 0;
+
+                    startWorkTimer();
+                    showNotification("Clocked in successfully");
+                } else {
+                    // ✅ Clock Out
+                    if (state.isOnBreak && !confirm("You're currently on break. Clocking out will end your break. Continue?")) {
+                        return;
+                    }
+
+                    const response = await fetch("/Attendance/ClockOut", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "RequestVerificationToken": document.querySelector('input[name="__RequestVerificationToken"]').value
+                        }
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.message || "Clock out failed");
+                    }
+
+                    showNotification("Clocked out successfully");
+                    resetState();
+                    resetAllTimers();
+                }
+
+                updateUI();
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                showLoading(false);
+                clockBtn.disabled = false;
+            }
+        });
+
+        });
+    </script>
+}
+
+
+<style>
+    .attendance-clock {
+        font-family: 'Courier New', monospace;
+        font-size: 1.8rem;
+        letter-spacing: 2px;
+    }
+
+    .badge-attendance {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+
+    #breakBtn {
+        transition: all 0.3s ease;
+    }
+
+        #breakBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+
+</style>

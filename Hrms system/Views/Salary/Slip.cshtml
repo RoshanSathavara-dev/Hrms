@@ -1,0 +1,376 @@
+﻿@model Hrms_system.Models.SalarySlip
+@{
+    ViewData["Title"] = "Salary Slip";
+}
+
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">Salary Slip</h2>
+                    <p class="text-muted mb-0">View and download your salary details</p>
+                </div>
+                <div>
+                    <button class="btn btn-outline-primary me-2" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>Print
+                    </button>
+                    <button class="btn btn-primary" id="downloadPdf" data-id="@Model.Id">
+                        <i class="fas fa-file-pdf me-2"></i>Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Salary Slip Card -->
+    <div class="card mb-4 printable-area">
+        <div class="card-body">
+            <!-- Company Header -->
+            <div class="text-center mb-5">
+                <img src="~/images/company-logo.png" alt="Company Logo" style="height: 60px;" class="mb-3">
+                <h3>ABC Corporation</h3>
+                <p class="text-muted">123 Business Street, City, Country</p>
+                <h4 class="mt-4">Salary Slip</h4>
+                <div class="d-flex justify-content-center">
+                    <p class="me-4"><strong>Period:</strong> @Model.Period.ToString("MMMM yyyy")</p>
+                    <p><strong>Issue Date:</strong> @Model.IssueDate.ToString("dd MMMM yyyy")</p>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <!-- Employee Information -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Employee Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-5 text-muted">Employee ID:</div>
+                                <div class="col-7">@Model.EmployeeId</div>
+
+                                <div class="col-5 text-muted">Name:</div>
+                                <div class="col-7">@Model.EmployeeName</div>
+
+                                <div class="col-5 text-muted">Department:</div>
+                                <div class="col-7">@Model.Department</div>
+
+                                <div class="col-5 text-muted">Designation:</div>
+                                <div class="col-7">@Model.Designation</div>
+
+                                <div class="col-5 text-muted">Joining Date:</div>
+                                <div class="col-7">@Model.JoiningDate.ToString("dd MMM yyyy")</div>
+
+                                <div class="col-5 text-muted">Bank Account:</div>
+                                <div class="col-7">@Model.BankAccount</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Summary -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Payment Summary</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6 text-muted">Basic Salary:</div>
+                                <div class="col-6 text-end">@Model.BasicSalary.ToString("C")</div>
+
+                                <div class="col-6 text-muted">Total Earnings:</div>
+                                <div class="col-6 text-end">@Model.TotalEarnings.ToString("C")</div>
+
+                                <div class="col-6 text-muted">Total Deductions:</div>
+                                <div class="col-6 text-end">@Model.TotalDeductions.ToString("C")</div>
+
+                                <hr class="my-2">
+
+                                <div class="col-6"><strong>Net Pay:</strong></div>
+                                <div class="col-6 text-end"><strong>@Model.NetPay.ToString("C")</strong></div>
+
+                                <div class="col-6 text-muted">Payment Method:</div>
+                                <div class="col-6 text-end">@Model.PaymentMethod</div>
+
+                                <div class="col-6 text-muted">Payment Status:</div>
+                                <div class="col-6 text-end">
+                                    <span class="badge bg-@(Model.PaymentStatus == "Paid" ? "success" : "warning")">
+                                        @Model.PaymentStatus
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earnings and Deductions -->
+            <div class="row">
+                <!-- Earnings -->
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Earnings</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Component</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Basic Salary</td>
+                                            <td class="text-end">@Model.BasicSalary.ToString("C")</td>
+                                        </tr>
+                                        <tr>
+                                            <td>House Rent Allowance</td>
+                                            <td class="text-end">@Model.HouseRentAllowance.ToString("C")</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Transport Allowance</td>
+                                            <td class="text-end">@Model.TransportAllowance.ToString("C")</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Meal Allowance</td>
+                                            <td class="text-end">@Model.MealAllowance.ToString("C")</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Performance Bonus</td>
+                                            <td class="text-end">@Model.PerformanceBonus.ToString("C")</td>
+                                        </tr>
+                                        @if (Model.OtherAllowances > 0)
+                                        {
+                                            <tr>
+                                                <td>Other Allowances</td>
+                                                <td class="text-end">@Model.OtherAllowances.ToString("C")</td>
+                                            </tr>
+                                        }
+                                        <tr class="table-active">
+                                            <td><strong>Total Earnings</strong></td>
+                                            <td class="text-end"><strong>@Model.TotalEarnings.ToString("C")</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Deductions -->
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header bg-light">
+                            <h5 class="mb-0">Deductions</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Component</th>
+                                            <th class="text-end">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Tax Deduction</td>
+                                            <td class="text-end">@Model.TaxDeduction.ToString("C")</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Social Security</td>
+                                            <td class="text-end">@Model.SocialSecurity.ToString("C")</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Health Insurance</td>
+                                            <td class="text-end">@Model.HealthInsurance.ToString("C")</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Provident Fund</td>
+                                            <td class="text-end">@Model.ProvidentFund.ToString("C")</td>
+                                        </tr>
+                                        @if (Model.OtherDeductions > 0)
+                                        {
+                                            <tr>
+                                                <td>Other Deductions</td>
+                                                <td class="text-end">@Model.OtherDeductions.ToString("C")</td>
+                                            </tr>
+                                        }
+                                        <tr class="table-active">
+                                            <td><strong>Total Deductions</strong></td>
+                                            <td class="text-end"><strong>@Model.TotalDeductions.ToString("C")</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Additional Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Leave Summary</h6>
+                            <div class="row">
+                                <div class="col-6 text-muted">Paid Leave Taken:</div>
+                                <div class="col-6">@Model.PaidLeaveTaken days</div>
+
+                                <div class="col-6 text-muted">Sick Leave Taken:</div>
+                                <div class="col-6">@Model.SickLeaveTaken day</div>
+
+                                <div class="col-6 text-muted">Leave Balance:</div>
+                                <div class="col-6">@Model.LeaveBalance days</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Attendance Summary</h6>
+                            <div class="row">
+                                <div class="col-6 text-muted">Working Days:</div>
+                                <div class="col-6">@Model.WorkingDays days</div>
+
+                                <div class="col-6 text-muted">Present Days:</div>
+                                <div class="col-6">@Model.PresentDays days</div>
+
+                                <div class="col-6 text-muted">Absent Days:</div>
+                                <div class="col-6">@(Model.WorkingDays - Model.PresentDays) days</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Salary History -->
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Salary History</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th class="text-end">Basic Salary</th>
+                                    <th class="text-end">Total Earnings</th>
+                                    <th class="text-end">Total Deductions</th>
+                                    <th class="text-end">Net Pay</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.History)
+                                {
+                                    <tr>
+                                        <td>@item.Period.ToString("MMMM yyyy")</td>
+                                        <td class="text-end">@item.BasicSalary.ToString("C")</td>
+                                        <td class="text-end">@item.TotalEarnings.ToString("C")</td>
+                                        <td class="text-end">@item.TotalDeductions.ToString("C")</td>
+                                        <td class="text-end">@item.NetPay.ToString("C")</td>
+                                        <td>
+                                            <span class="badge bg-@(item.Status == "Paid" ? "success" : "warning")">
+                                                @item.Status
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="mt-4">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="mb-1">Prepared by: HR Department</p>
+                        <p class="text-muted small">This is a system generated document</p>
+                    </div>
+                    <div class="text-end">
+                        <p class="mb-1">Employee Signature: ________________</p>
+                        <p>Authorized Signature: ________________</p>
+                    </div>
+                </div>
+                <hr>
+                <p class="text-center text-muted small">
+                    For any discrepancies, please contact HR department within 7 days of receiving this slip.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+    <script>
+        $(document).ready(function() {
+            $('#downloadPdf').click(function() {
+                var slipId = $(this).data('id');
+
+                $.ajax({
+                    url: '/Salary/DownloadPdf?id=' + slipId,
+                    type: 'GET',
+                    success: function(response) {
+                        alert(response.message);
+                        // In a real app, you would download the PDF here
+                        // window.location.href = '/Salary/DownloadPdf?id=' + slipId;
+                    },
+                    error: function() {
+                        alert('Error generating PDF');
+                    }
+                });
+            });
+        });
+    </script>
+
+
+
+    <style>
+        .printable-area {
+            border: 1px solid #e0e0e0;
+            padding: 2rem;
+            background-color: white;
+        }
+
+        @@media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .printable-area, .printable-area * {
+                visibility: visible;
+            }
+
+            .printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                border: none;
+                padding: 0;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .card {
+                border: none;
+                box-shadow: none;
+            }
+        }
+
+        .table-active {
+            background-color: rgba(0,0,0,0.05);
+        }
+    </style>

@@ -1,0 +1,974 @@
+﻿@model LeaveDashboardViewModel
+
+
+
+@{
+    ViewData["Title"] = "Leave Management";
+    Layout = "_AdminLayout";
+}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+
+<!-- Add these in the <head> section -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css">
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2">Leave Management</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary">Print</button>
+        </div>
+        <button type="button" class="btn btn-sm btn-admin">
+            <i class="fas fa-plus me-1"></i> Add Leave
+        </button>
+    </div>
+</div>
+
+<!-- Leave Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-start border-primary border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Pending Approval</h6>
+                        <h3 class="mb-0">@ViewBag.PendingCount</h3>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-hourglass-half text-primary fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-success border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Approved</h6>
+                        <h3 class="mb-0">@ViewBag.ApprovedCount</h3>
+                    </div>
+                    <div class="bg-success bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-check-circle text-success fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-danger border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Rejected</h6>
+                        <h3 class="mb-0">@ViewBag.RejectedCount</h3>
+                    </div>
+                    <div class="bg-danger bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-times-circle text-danger fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-start border-info border-4 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">On Leave Today</h6>
+                        <h3 class="mb-0">@ViewBag.TodayLeaveCount</h3>
+                    </div>
+                    <div class="bg-info bg-opacity-10 p-3 rounded">
+                        <i class="fas fa-umbrella-beach text-info fs-4"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leave Requests -->
+<div class="card mb-4">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+            <li class="nav-item">
+                <a class="nav-link active" asp-action="Leave" asp-route-status="All">All Leaves</a>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body p-0">
+        <div class="d-flex justify-content-between align-items-center mb-3 px-3 pt-3">
+        <h5 class="mb-0">Leave Requests</h5>
+        <form method="get" asp-action="Leave">
+            <input type="hidden" name="status" value="All" />
+            <div class="input-group">
+                <select name="year" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Years</option>
+                        @foreach (var y in (List<int>)ViewBag.Years)
+                        {
+                            var isSelected = ViewBag.SelectedYear != null && (int)ViewBag.SelectedYear == y;
+                            <option value="@y" selected="@(isSelected ? "selected" : null)">@y</option>
+                        }
+
+                </select>
+            </div>
+        </form>
+    </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-admin">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>
+                            Leave Type
+                            <span id="leaveTypeFilterIcon" style="cursor:pointer; margin-left:5px;">
+                                <i class="fas fa-filter"></i>
+                            </span>
+                            <div id="leaveTypeFilterDropdown" class="card p-3" style="display:none; position:absolute; z-index:1000; min-width:250px;">
+                                <input type="text" id="leaveTypeSearch" class="form-control mb-2" placeholder="Type Here" />
+                                <div id="leaveTypeCheckboxes" style="max-height:150px; overflow-y:auto;"></div>
+                                <button type="button" class="btn btn-link" id="resetLeaveTypeFilter">
+                                    <i class="fas fa-undo"></i> Reset Filter
+                                </button>
+                            </div>
+                        </th>
+                        <th>From</th>
+                        <th>To</th>
+                        <th>Days</th>
+                        <th>Reason</th>
+                        <!-- Update the Status column header in your table -->
+                        <th>
+                            Status
+                            <span id="statusFilterIcon" style="cursor:pointer; margin-left:5px;">
+                                <i class="fas fa-filter"></i>
+                            </span>
+                            <div id="statusFilterDropdown" class="card p-3" style="display:none; position:absolute; z-index:1000; min-width:250px;">
+                                <input type="text" id="statusSearch" class="form-control mb-2" placeholder="Search statuses..." />
+                                <div id="statusCheckboxes" style="max-height:150px; overflow-y:auto;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="All" id="statusAll">
+                                        <label class="form-check-label" for="statusAll">All Statuses</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input status-checkbox" type="checkbox" value="Pending" id="statusPending">
+                                        <label class="form-check-label" for="statusPending">Pending</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input status-checkbox" type="checkbox" value="Approved" id="statusApproved">
+                                        <label class="form-check-label" for="statusApproved">Approved</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input status-checkbox" type="checkbox" value="Rejected" id="statusRejected">
+                                        <label class="form-check-label" for="statusRejected">Rejected</label>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn btn-link" id="resetStatusFilter">
+                                    <i class="fas fa-undo"></i> Reset Filter
+                                </button>
+                            </div>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.LeaveRequests != null && Model.LeaveRequests.Any())
+                    {
+                        @foreach (var leave in Model.LeaveRequests)
+                        {
+                            <tr data-id="@leave.Id">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="https://randomuser.me/api/portraits/men/32.jpg" class="rounded-circle me-2" width="30" height="30">
+                                        <div>@leave.Employee?.FullName</div>
+                                    </div>
+                                </td>
+                                <td>@leave.LeaveType?.Name</td>
+                                <td>@leave.StartDate.ToString("dd MMM yyyy")</td>
+                                <td>@leave.EndDate.ToString("dd MMM yyyy")</td>
+                                <td>@leave.Days</td>
+                                <td>@leave.Reason</td>
+                                <td>
+                                    <span class="badge bg-@(
+                        leave.Status == "Pending" ? "warning" :
+                        leave.Status == "Approved" ? "success" :
+                        "danger"
+                    ) status-badge">@leave.Status</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        @if (leave.Status == "Pending")
+                                        {
+                                            <button class="btn btn-outline-success approve-btn" data-id="@leave.Id" title="Approve">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger reject-btn" data-id="@leave.Id" title="Reject">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        }
+                                        else if (leave.Status == "Approved")
+                                        {
+                                            <button class="btn btn-outline-danger reject-btn" data-id="@leave.Id" title="Reject">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        }
+                                        <button class="btn btn-outline-primary" title="View">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td class="text-center">No leave requests available.</td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+<div class="card-header bg-primary text-white">
+    <h3 class="card-title">Employee Leave Balances</h3>
+</div>
+    <div class="card-body">
+<table class="table table-bordered table-striped table-hover">
+    <thead class="thead-dark">
+        <tr>
+            <th>Employee</th>
+            <th>Leave Type</th>
+            <th>Total Leaves</th>
+            <th>Used Leaves</th>
+            <th>Pending Leaves</th>
+            <th>Available</th>
+            <th>Carry Forward</th>
+        </tr>
+    </thead>
+    <tbody>
+             @if (Model.LeaveBalances != null && Model.LeaveBalances.Any())
+        {
+        @foreach (var balance in Model.LeaveBalances)
+        {
+            <tr>
+                <td>@balance.Employee?.FullName</td>
+                <td>@balance.LeaveType?.Name</td>
+                <td>@balance.TotalLeaves</td>
+                <td>@balance.UsedLeaves</td>
+                <td>@balance.PendingLeaves</td>
+                <td>@(balance.TotalLeaves - balance.UsedLeaves - balance.PendingLeaves)</td>
+                            <td>
+                                @if (balance.CarryForwardedLeaves.HasValue)
+                                {
+                                    <span>@balance.CarryForwardedLeaves.Value</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">None</span>
+                                }
+                            </td>
+            </tr>
+        }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" class="text-center">No leave balances available.</td>
+                </tr>
+            }
+    </tbody>
+</table>
+</div>
+</div>
+
+
+<!-- View Leave Details Modal -->
+<div class="modal fade" id="viewLeaveModal" tabindex="-1" aria-labelledby="viewLeaveModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="viewLeaveModalLabel">Leave Request Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Employee Information</h6>
+                        <div class="d-flex align-items-center mb-3">
+                            <img id="employeeImage" src="https://randomuser.me/api/portraits/men/32.jpg" class="rounded-circle me-3" width="60" height="60">
+                            <div>
+                                <h5 id="employeeName" class="mb-0"></h5>
+                                <span id="employeePosition" class="text-muted"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Request Details</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <th>Request ID:</th>
+                                        <td id="requestId"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Applied On:</th>
+                                        <td id="appliedOn"></td>
+                                    </tr>
+                                    <tr>
+                                        <th>Status:</th>
+                                        <td><span id="requestStatus" class="badge"></span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">Leave Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm table-borderless">
+                                    <tbody>
+                                        <tr>
+                                            <th>Leave Type:</th>
+                                            <td id="leaveType"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>From:</th>
+                                            <td id="startDate"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>To:</th>
+                                            <td id="endDate"></td>
+                                        </tr>
+                                        <tr>
+                                            <th>Days:</th>
+                                            <td id="days"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">Additional Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <h6 class="mb-2">Reason:</h6>
+                                <p id="reason" class="mb-3"></p>
+
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <div id="modal-actions" style="display: none;">
+                    <button type="button" class="btn btn-success approve-btn-modal" data-id="" style="display: none;">
+                        <i class="fas fa-check me-1"></i> Approve
+                    </button>
+                    <button type="button" class="btn btn-danger reject-btn-modal" data-id="" style="display: none;">
+                        <i class="fas fa-times me-1"></i> Reject
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.table-admin').DataTable({
+                responsive: true,
+                dom: '<"top"f>rt<"bottom"lip><"clear">',
+                pageLength: 10
+            });
+
+            // Status filter functionality
+            $("#statusFilterIcon").on("click", function(e) {
+                $("#statusFilterDropdown").toggle();
+                e.stopPropagation();
+            });
+
+            $(document).on("click", function() {
+                $("#statusFilterDropdown").hide();
+            });
+
+            $("#statusFilterDropdown").on("click", function(e) {
+                e.stopPropagation();
+            });
+
+            // Initialize status checkboxes (none selected by default)
+            $("#statusCheckboxes input[type=checkbox]").prop("checked", false);
+
+            // Status search functionality
+            $("#statusSearch").on("input", function() {
+                const searchText = $(this).val().toLowerCase();
+                $("#statusCheckboxes .form-check").each(function() {
+                    const labelText = $(this).find('.form-check-label').text().toLowerCase();
+                    $(this).toggle(labelText.includes(searchText));
+                });
+            });
+
+            // Handle checkbox changes for status filter
+            $(document).on("change", "#statusCheckboxes input[type=checkbox]", function() {
+                var selected = [];
+                $("#statusCheckboxes input[type=checkbox]:checked").each(function() {
+                    if ($(this).val() !== "All") selected.push($(this).val());
+                });
+
+                if ($(this).val() === "All") {
+                    // If "All" is checked, uncheck others and show all rows
+                    $("#statusCheckboxes input[type=checkbox]").not(this).prop("checked", false);
+                    $("table.table-admin tbody tr").show();
+                } else {
+                    // Uncheck "All" if another checkbox is checked
+                    $("#statusAll").prop("checked", false);
+
+                    if (selected.length === 0) {
+                        // If nothing is selected, show all rows
+                        $("table.table-admin tbody tr").show();
+                    } else {
+                        // Filter rows based on selected statuses
+                        $("table.table-admin tbody tr").each(function() {
+                            var status = $(this).find("td:nth-child(7) .status-badge").text().trim();
+                            $(this).toggle(selected.includes(status));
+                        });
+                    }
+                }
+            });
+
+            // Reset status filter
+            $("#resetStatusFilter").on("click", function() {
+                $("#statusCheckboxes input[type=checkbox]").prop("checked", false);
+                $("table.table-admin tbody tr").show();
+            });
+
+            // Leave type filter functionality
+            var leaveTypes = @Html.Raw(
+                            Newtonsoft.Json.JsonConvert.SerializeObject(
+                                    (Model.LeaveRequests ?? new List<LeaveRequest>())
+                                            .Select(l => l.LeaveType?.Name)
+                                            .Where(n => !string.IsNullOrEmpty(n))
+                                            .Distinct()
+                                            .ToList()
+                            )
+                    );
+
+        function renderLeaveTypeCheckboxes(filter = "") {
+            var html = '<div class="form-check"><input class="form-check-input" type="checkbox" value="All" id="leaveTypeAll"><label class="form-check-label" for="leaveTypeAll">All</label></div>';
+            leaveTypes.filter(t => t.toLowerCase().includes(filter.toLowerCase())).forEach(function(type, idx) {
+                html += `<div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="${type}" id="leaveType${idx}">
+                            <label class="form-check-label" for="leaveType${idx}">${type}</label>
+                        </div>`;
+            });
+            $("#leaveTypeCheckboxes").html(html);
+        }
+
+            $("#leaveTypeFilterIcon").on("click", function(e) {
+                $("#leaveTypeFilterDropdown").toggle();
+                renderLeaveTypeCheckboxes();
+                e.stopPropagation();
+            });
+
+            $(document).on("click", function() {
+                $("#leaveTypeFilterDropdown").hide();
+            });
+
+            $("#leaveTypeFilterDropdown").on("click", function(e) {
+                e.stopPropagation();
+            });
+
+            $("#leaveTypeSearch").on("input", function() {
+                renderLeaveTypeCheckboxes($(this).val());
+            });
+
+            $(document).on("change", "#leaveTypeCheckboxes input[type=checkbox]", function() {
+                var selected = [];
+                $("#leaveTypeCheckboxes input[type=checkbox]:checked").each(function() {
+                    if ($(this).val() !== "All") selected.push($(this).val());
+                });
+
+                if ($(this).val() === "All") {
+                    $("#leaveTypeCheckboxes input[type=checkbox]").not(this).prop("checked", false);
+                } else {
+                    $("#leaveTypeAll").prop("checked", false);
+                }
+
+                $("table.table-admin tbody tr").each(function() {
+                    var leaveType = $(this).find("td:nth-child(2)").text().trim();
+                    if (selected.length === 0 || selected.includes(leaveType)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+
+            $("#resetLeaveTypeFilter").on("click", function() {
+                $("#leaveTypeCheckboxes input[type=checkbox]").prop("checked", false);
+                $("table.table-admin tbody tr").show();
+            });
+
+            // View leave details
+            $(document).on("click", ".btn-outline-primary[title='View']", function () {
+                const row = $(this).closest('tr');
+                const id = row.data('id');
+
+                // Get the leave request data from the row
+                const employeeName = row.find('td:eq(0) div:eq(1)').text();
+                const leaveType = row.find('td:eq(1)').text();
+                const startDate = row.find('td:eq(2)').text();
+                const endDate = row.find('td:eq(3)').text();
+                const days = row.find('td:eq(4)').text();
+                const reason = row.find('td:eq(5)').text();
+                const status = row.find('.status-badge').text();
+                const statusClass = row.find('.status-badge').attr('class').split(' ').find(c => c.startsWith('bg-')).replace('bg-', '');
+
+                // Populate the modal
+                $('#employeeName').text(employeeName);
+                $('#leaveType').text(leaveType);
+                $('#startDate').text(startDate);
+                $('#endDate').text(endDate);
+                $('#days').text(days);
+                $('#reason').text(reason);
+                $('#requestId').text(id);
+                $('#appliedOn').text(new Date().toLocaleDateString());
+                $('#requestStatus').text(status).removeClass().addClass('badge bg-' + statusClass);
+
+                // Store the leave ID in the modal buttons
+                $('#viewLeaveModal .approve-btn-modal, #viewLeaveModal .reject-btn-modal').data('id', id);
+
+                // Show or hide action buttons based on status
+                $('#modal-actions').show();
+                $('#viewLeaveModal .approve-btn-modal').hide();
+                $('#viewLeaveModal .reject-btn-modal').hide();
+
+                if (status === 'Pending') {
+                    $('#viewLeaveModal .approve-btn-modal').show();
+                    $('#viewLeaveModal .reject-btn-modal').show();
+                } else if (status === 'Approved') {
+                    $('#viewLeaveModal .reject-btn-modal').show();
+                }
+
+                // Show the modal
+                $('#viewLeaveModal').modal('show');
+            });
+
+            function handleLeaveAction(url, id, successMsg, errorMsg) {
+                $.post(url, { id: id })
+                    .done(function (res) {
+                        if (res.success) {
+                            toastr.success(successMsg);
+                            $('#viewLeaveModal').modal('hide');
+
+                            // Update the table row
+                            const row = $(`tr[data-id="${id}"]`);
+                            const statusBadge = row.find('.status-badge');
+                            const isApproveAction = url.includes('Approve');
+                            const newStatus = isApproveAction ? 'Approved' : 'Rejected';
+                            const newStatusClass = newStatus === 'Approved' ? 'success' : 'danger';
+
+                            statusBadge.text(newStatus)
+                                .removeClass('bg-warning bg-success bg-danger')
+                                .addClass(`bg-${newStatusClass}`);
+
+                            // Update action buttons
+                            const btnGroup = row.find('.btn-group');
+                            btnGroup.find('.approve-btn, .reject-btn').remove();
+
+                            if (newStatus === 'Approved') {
+                                btnGroup.prepend(`
+                                    <button class="btn btn-outline-danger reject-btn" data-id="${id}" title="Reject">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                `);
+                            }
+
+                            setTimeout(() => location.reload(), 1000);
+                        } else {
+                            toastr.error(res.message || errorMsg);
+                        }
+                    })
+                    .fail(function (xhr) {
+                        const err = xhr.responseJSON?.message || xhr.responseText || errorMsg;
+                        toastr.error(`Error: ${err}`);
+                    });
+            }
+
+            // Approve leave
+            $(document).on("click", ".approve-btn", function (e) {
+                e.preventDefault();
+                const id = $(this).data("id");
+                handleLeaveAction("/LeaveRequest/ApproveLeave", id, "Leave approved successfully", "Failed to approve leave");
+            });
+
+            $(document).on("click", ".reject-btn", function (e) {
+                e.preventDefault();
+                const id = $(this).data("id");
+                handleLeaveAction("/LeaveRequest/RejectLeave", id, "Leave rejected successfully", "Failed to reject leave");
+            });
+
+            // Approve leave from modal
+            $(document).on("click", ".approve-btn-modal", function (e) {
+                e.preventDefault();
+                const id = $(this).data('id');
+                handleLeaveAction("/LeaveRequest/ApproveLeave", id, "Leave approved successfully", "Failed to approve leave");
+            });
+
+            // Reject leave from modal
+            $(document).on("click", ".reject-btn-modal", function (e) {
+                e.preventDefault();
+                const id = $(this).data('id');
+                handleLeaveAction("/LeaveRequest/RejectLeave", id, "Leave rejected successfully", "Failed to reject leave");
+            });
+        });
+
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": true,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000"
+        };
+    </script>
+}
+
+<style>
+    #leaveTypeFilterDropdown {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        right: 0;
+    }
+   
+</style>
+
+
+@* @section Scripts {
+    <script>
+                $(document).ready(function () {
+                    $('.table-admin').DataTable({
+                        responsive: true,
+                        dom: '<"top"f>rt<"bottom"lip><"clear">',
+                        pageLength: 10
+                    });
+                            // Status filter functionality
+                $("#statusFilterIcon").on("click", function(e) {
+                    $("#statusFilterDropdown").toggle();
+                    e.stopPropagation();
+                });
+
+                $(document).on("click", function() {
+                    $("#statusFilterDropdown").hide();
+                });
+
+                $("#statusFilterDropdown").on("click", function(e) {
+                    e.stopPropagation();
+                });
+
+                $("#statusSearch").on("input", function() {
+                    const searchText = $(this).val().toLowerCase();
+                    $("#statusCheckboxes .form-check").each(function() {
+                        const labelText = $(this).find('.form-check-label').text().toLowerCase();
+                        $(this).toggle(labelText.includes(searchText));
+                    });
+                });
+
+                $(document).on("change", "#statusCheckboxes input[type=checkbox]", function() {
+                    var selected = [];
+                    $("#statusCheckboxes input[type=checkbox]:checked").each(function() {
+                        if ($(this).val() !== "All") selected.push($(this).val());
+                    });
+
+                    if ($(this).val() === "All") {
+                        $("#statusCheckboxes input[type=checkbox]").not(this).prop("checked", false);
+                    } else {
+                        $("#statusAll").prop("checked", false);
+                    }
+
+                    $("table.table-admin tbody tr").each(function() {
+                        var status = $(this).find("td:nth-child(7)").text().trim();
+                        if (selected.length === 0 || selected.includes(status)) {
+                            $(this).show();
+                        } else {
+                            $(this).hide();
+                        }
+                    });
+                });
+
+                $("#resetStatusFilter").on("click", function() {
+                    $("#statusCheckboxes input[type=checkbox]").prop("checked", false);
+                    $("#statusAll").prop("checked", true);
+                    $("table.table-admin tbody tr").show();
+                });
+                                        var leaveTypes = @Html.Raw(
+                                                                                                    Newtonsoft.Json.JsonConvert.SerializeObject(
+                                                                                                                    (Model.LeaveRequests ?? new List<LeaveRequest>())
+                                                                                                                                    .Select(l => l.LeaveType?.Name)
+                                                                                                                                    .Where(n => !string.IsNullOrEmpty(n))
+                                                                                                                                    .Distinct()
+                                                                                                                                    .ToList()
+                                                                                                    )
+                                                                                    );
+
+                        function renderLeaveTypeCheckboxes(filter = "") {
+                            var html = '<div class="form-check"><input class="form-check-input" type="checkbox" value="All" id="leaveTypeAll"><label class="form-check-label" for="leaveTypeAll">All</label></div>';
+                            leaveTypes.filter(t => t.toLowerCase().includes(filter.toLowerCase())).forEach(function(type, idx) {
+                                html += `<div class="form-check">
+                                            <input class="form-check-input" type="checkbox" value="${type}" id="leaveType${idx}">
+                                            <label class="form-check-label" for="leaveType${idx}">${type}</label>
+                                        </div>`;
+                            });
+                            $("#leaveTypeCheckboxes").html(html);
+                        }
+
+                                    $("#leaveTypeFilterIcon").on("click", function(e) {
+                                        $("#leaveTypeFilterDropdown").toggle();
+                                        renderLeaveTypeCheckboxes();
+                                        e.stopPropagation();
+                                    });
+                                    $(document).on("click", function() {
+                                        $("#leaveTypeFilterDropdown").hide();
+                                    });
+                                    $("#leaveTypeFilterDropdown").on("click", function(e) {
+                                        e.stopPropagation();
+                                    });
+                                    $("#leaveTypeSearch").on("input", function() {
+                                        renderLeaveTypeCheckboxes($(this).val());
+                                    });
+                                    $(document).on("change", "#leaveTypeCheckboxes input[type=checkbox]", function() {
+                                        var selected = [];
+                                        $("#leaveTypeCheckboxes input[type=checkbox]:checked").each(function() {
+                                            if ($(this).val() !== "All") selected.push($(this).val());
+                                        });
+                                        if ($(this).val() === "All") {
+                                            $("#leaveTypeCheckboxes input[type=checkbox]").not(this).prop("checked", false);
+                                        } else {
+                                            $("#leaveTypeAll").prop("checked", false);
+                                        }
+                                        $("table.table-admin tbody tr").each(function() {
+                                            var leaveType = $(this).find("td:nth-child(2)").text().trim();
+                                            if (selected.length === 0 || selected.includes(leaveType)) {
+                                                $(this).show();
+                                            } else {
+                                                $(this).hide();
+                                            }
+                                        });
+                                    });
+                                    $("#resetLeaveTypeFilter").on("click", function() {
+                                        $("#leaveTypeCheckboxes input[type=checkbox]").prop("checked", false);
+                                        $("table.table-admin tbody tr").show();
+                                    });
+
+
+                             $(document).on("click", ".btn-outline-primary[title='View']", function () {
+                    const row = $(this).closest('tr');
+                    const id = row.data('id');
+
+                    // Get the leave request data from the row
+                    const employeeName = row.find('td:eq(0) div:eq(1)').text();
+                    const leaveType = row.find('td:eq(1)').text();
+                    const startDate = row.find('td:eq(2)').text();
+                    const endDate = row.find('td:eq(3)').text();
+                    const days = row.find('td:eq(4)').text();
+                    const reason = row.find('td:eq(5)').text();
+                    const status = row.find('.status-badge').text();
+                    const statusClass = row.find('.status-badge').attr('class').split(' ').find(c => c.startsWith('bg-')).replace('bg-', '');
+
+                    // Populate the modal
+                    $('#employeeName').text(employeeName);
+                    $('#leaveType').text(leaveType);
+                    $('#startDate').text(startDate);
+                    $('#endDate').text(endDate);
+                    $('#days').text(days);
+                    $('#reason').text(reason);
+                    $('#requestId').text(id);
+                    $('#appliedOn').text(new Date().toLocaleDateString()); // Update this if you have the actual applied date
+                    $('#requestStatus').text(status).removeClass().addClass('badge bg-' + statusClass);
+
+                    // Store the leave ID in the modal buttons
+                    $('#viewLeaveModal .approve-btn-modal, #viewLeaveModal .reject-btn-modal').data('id', id);
+
+                    // Show or hide action buttons based on status
+                    $('#modal-actions').show();
+                    $('#viewLeaveModal .approve-btn-modal').hide();
+                    $('#viewLeaveModal .reject-btn-modal').hide();
+
+                    if (status === 'Pending') {
+                        $('#viewLeaveModal .approve-btn-modal').show();
+                        $('#viewLeaveModal .reject-btn-modal').show();
+                    } else if (status === 'Approved') {
+                        $('#viewLeaveModal .reject-btn-modal').show();
+                    }
+
+
+
+
+                    // Show the modal
+                    $('#viewLeaveModal').modal('show');
+                });
+                    // Current leave ID variable
+                    let currentLeaveId = 0;
+
+                    // View leave details
+                    $(document).on("click", ".btn-outline-primary[title='View']", function () {
+                        const row = $(this).closest('tr');
+                        currentLeaveId = row.data('id');
+
+                        // Set the leave ID in the modal buttons
+                        $('#viewLeaveModal .approve-btn-modal').data('id', currentLeaveId);
+                        $('#viewLeaveModal .reject-btn-modal').data('id', currentLeaveId);
+
+                        // Show the modal
+                        $('#viewLeaveModal').modal('show');
+                    });
+
+                  function handleLeaveAction(url, id, successMsg, errorMsg) {
+                    $.post(url, { id: id })
+                        .done(function (res) {
+                            if (res.success) {
+                                toastr.success(successMsg);
+                                $('#viewLeaveModal').modal('hide');
+
+                                // Update the table row
+                                const row = $(`tr[data-id="${id}"]`);
+                                const statusBadge = row.find('.status-badge');
+                                const isApproveAction = url.includes('Approve');
+                                const newStatus = isApproveAction ? 'Approved' : 'Rejected';
+                                const newStatusClass = newStatus === 'Approved' ? 'success' : 'danger';
+
+                                statusBadge.text(newStatus)
+                                    .removeClass('bg-warning bg-success bg-danger')
+                                    .addClass(`bg-${newStatusClass}`);
+
+                                // Update action buttons
+                                const btnGroup = row.find('.btn-group');
+                                btnGroup.find('.approve-btn, .reject-btn').remove(); // Remove existing action buttons
+
+                                if (newStatus === 'Approved') {
+                                    // Add only Reject button for Approved status
+                                    btnGroup.prepend(`
+                                        <button class="btn btn-outline-danger reject-btn" data-id="${id}" title="Reject">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    `);
+                                }
+                                // For Rejected status, no buttons are added
+
+                                setTimeout(() => location.reload(), 1000);
+                            } else {
+                                toastr.error(res.message || errorMsg);
+                            }
+                        })
+                        .fail(function (xhr) {
+                            const err = xhr.responseJSON?.message || xhr.responseText || errorMsg;
+                            toastr.error(`Error: ${err}`);
+                        });
+                }
+
+                    // Approve leave from modal
+                    $(document).on("click", ".approve-btn-modal", function (e) {
+                        e.preventDefault();
+                        const id = $(this).data('id') || currentLeaveId;
+
+                        if (!id) {
+                            toastr.error('Leave ID not found');
+                            return;
+                        }
+
+                        $.post("/LeaveRequest/ApproveLeave", { id: id })
+                .done(function(res) {
+                    if (res.success) {
+                        toastr.success(res.message || 'Leave approved successfully');
+                        $('#viewLeaveModal').modal('hide');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        toastr.error(res.message || 'Failed to approve leave');
+                    }
+                })
+                .fail(function(xhr) {
+                    const err = xhr.responseJSON?.message || xhr.responseText || 'Error approving leave';
+                    toastr.error(`Error: ${err}`);
+                });
+
+                    });
+
+                    // Reject leave from modal
+                    $(document).on("click", ".reject-btn-modal", function (e) {
+                        e.preventDefault();
+                        const id = $(this).data('id') || currentLeaveId;
+
+                        if (!id) {
+                            toastr.error('Leave ID not found');
+                            return;
+                        }
+
+                        $.post("/LeaveRequest/RejectLeave", { id: id })
+        .done(function(res) {
+            if (res.success) {
+                toastr.success(res.message || 'Leave rejected successfully');
+                $('#viewLeaveModal').modal('hide');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                toastr.error(res.message || 'Failed to reject leave');
+            }
+        })
+        .fail(function(xhr) {
+            const err = xhr.responseJSON?.message || xhr.responseText || 'Error rejecting leave';
+            toastr.error(`Error: ${err}`);
+        });
+
+                    });
+
+
+                    // Approve leave
+                    $(document).on("click", ".approve-btn", function (e) {
+                        e.preventDefault();
+                        const id = $(this).data("id");
+                        handleLeaveAction("/LeaveRequest/ApproveLeave", id, "Leave approved successfully", "Failed to approve leave");
+                    });
+
+                    $(document).on("click", ".reject-btn", function (e) {
+                        e.preventDefault();
+                        const id = $(this).data("id");
+                        handleLeaveAction("/LeaveRequest/RejectLeave", id, "Leave rejected successfully", "Failed to reject leave");
+                    });
+                });
+
+                toastr.options = {
+                    "closeButton": true,
+                    "progressBar": true,
+                    "positionClass": "toast-top-right",
+                    "preventDuplicates": true,
+                    "showDuration": "300",
+                    "hideDuration": "1000",
+                    "timeOut": "5000",
+                    "extendedTimeOut": "1000"
+                };
+    </script>
+} *@

@@ -1,0 +1,184 @@
+﻿@* @model List<object>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Test Leave Accrual";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Test Leave Accrual</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-4">
+            <div class="form-group">
+                <label for="testDate">Test Date:</label>
+                <input type="date" id="testDate" name="testDate" class="form-control"
+                       value="@(ViewBag.TestDate?.ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd"))" />
+            </div>
+            <button type="submit" class="btn btn-primary">Test Accrual</button>
+        </form>
+
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Leave Type</th>
+                            <th>Current Balance</th>
+                            <th>Accrual on Test Date</th>
+                            <th>Cumulative Accrual</th>
+                            <th>Projected Balance</th>
+                            <th>Last Accrual Date</th>
+                            <th>Credit on 1st</th>
+                            <th>Frequency</th>
+                            <th>Test Date</th>
+                            <th>Would Accrue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (dynamic item in Model)
+                        {
+                            <tr>
+                                <td>@item.EmployeeName</td>
+                                <td>@item.LeaveType</td>
+                                <td>@item.CurrentBalance.ToString("0.00")</td>
+                                <td>@item.AccrualAmount.ToString("0.00")</td>
+                                <td>@item.CumulativeAccrual.ToString("0.00")</td>
+                                <td>@item.ProjectedBalance.ToString("0.00")</td>
+                                <td>@(item.LastAccrualDate?.ToString("dd/MM/yyyy") ?? "Never")</td>
+                                <td>@(item.CreditOnFirstDay ? "Yes" : "No")</td>
+                                <td>@item.AccrualFrequency</td>
+                                <td>@item.TestDate.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @if (item.WouldAccrue)
+                                    {
+                                        <span class="badge bg-success">Yes</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">No</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                No leave accrual data available for the selected date.
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('.table').DataTable({
+                "order": [[0, "asc"]],
+                "pageLength": 25
+            });
+        });
+    </script>
+} *@
+@model List<object>
+
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Test Leave Accrual";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Test Leave Accrual</h3>
+    </div>
+    <div class="card-body">
+        <form method="get" class="mb-4">
+            <div class="form-group">
+                <label for="testDate">Test Date:</label>
+                <input type="date" id="testDate" name="testDate" class="form-control"
+                       value="@(ViewBag.TestDate?.ToString("yyyy-MM-dd") ?? DateTime.Now.ToString("yyyy-MM-dd"))" />
+            </div>
+            <button type="submit" class="btn btn-primary">Test Accrual</button>
+        </form>
+
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Employee</th>
+                            <th>Join Date</th>
+                            <th>Leave Type</th>
+                            <th>Current Balance</th>
+                            <th>Accrual on Test Date</th>
+                            <th>Cumulative Accrual</th>
+                            <th>Carry Forward</th>
+                            <th>Projected Balance</th>
+                            <th>Last Accrual Date</th>
+                            <th>Credit on 1st</th>
+                            <th>Frequency</th>
+                            <th>Test Date</th>
+                            <th>Would Accrue</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (dynamic item in Model)
+                        {
+                            <tr>
+                                <td>@item.EmployeeName</td>
+                                <td>@item.JoinDate.ToString("dd/MM/yyyy")</td>
+                                <td>@item.LeaveType</td>
+                                <td>@item.CurrentBalance.ToString("0.00")</td>
+                                <td>@item.AccrualAmount.ToString("0.00")</td>
+                                <td>@item.CumulativeAccrual.ToString("0.00")</td>
+                                <td>@item.CarryForwardAmount.ToString("0.00")</td>
+                                <td>@item.ProjectedBalance.ToString("0.00")</td>
+                                <td>@(item.LastAccrualDate?.ToString("dd/MM/yyyy") ?? "Never")</td>
+                                <td>@(item.CreditOnFirstDay ? "Yes" : "No")</td>
+                                <td>@item.AccrualFrequency</td>
+                                <td>@item.TestDate.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @if (item.WouldAccrue)
+                                    {
+                                        <span class="badge bg-success">Yes</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">No</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                No leave accrual data available for the selected date.
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('.table').DataTable({
+                "order": [[0, "asc"]],
+                "pageLength": 25
+            });
+        });
+    </script>
+}

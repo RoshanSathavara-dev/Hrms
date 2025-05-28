@@ -1,0 +1,186 @@
+﻿@{
+    ViewData["Title"] = "Settings";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2">Settings</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" class="btn btn-sm btn-admin">
+            <i class="fas fa-save me-1"></i> Save Changes
+        </button>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Profile Settings -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Profile Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-control" placeholder="John Doe" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Email Address</label>
+                    <input type="email" class="form-control" placeholder="admin@example.com" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Preferences -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Notification Preferences</h5>
+            </div>
+            <div class="card-body">
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="emailNoti" checked>
+                    <label class="form-check-label" for="emailNoti">Receive Email Notifications</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="smsNoti">
+                    <label class="form-check-label" for="smsNoti">Receive SMS Notifications</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Theme Settings -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Display Settings</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Theme</label>
+                    <select class="form-select">
+                        <option selected>Default</option>
+                        <option>Dark Mode</option>
+                        <option>Light Mode</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Security Settings -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Security</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Current Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="currentPassword" />
+                        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="currentPassword"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">New Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="newPassword" />
+                        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="newPassword"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Confirm Password</label>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="confirmPassword" />
+                        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="confirmPassword"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Work Schedule & Break Policy -->
+<div class="col-md-12 mb-4">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Work Schedule & Break Policy</h5>
+        </div>
+        <div class="card-body row">
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Company Start Time</label>
+                <input type="time" class="form-control" value="09:00" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Company End Time</label>
+                <input type="time" class="form-control" value="18:00" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Max Breaks Allowed (per day)</label>
+                <input type="number" class="form-control" min="0" value="2" />
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label">Max Break Duration (minutes)</label>
+                <input type="number" class="form-control" min="0" value="15" />
+            </div>
+        </div>
+    </div>
+</div>
+
+ <!-- Leave Balance & Expiry Settings -->
+    <!-- Leave Balance & Expiry Settings -->
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Leave Balance & Expiry Settings</h5>
+            </div>
+            <div class="card-body row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Leave Year</label>
+                    <input type="number" class="form-control" id="leaveYear" value="2025" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Annual Leave Balance (days)</label>
+                    <input type="number" class="form-control" id="annualLeaveBalance" value="20" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Leave Expiry Date</label>
+                    <input type="date" class="form-control" id="expiryDate" value="2025-12-31" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Leave Policy Button -->
+    <button type="button" class="btn btn-admin" onclick="saveLeavePolicy()"> Save Leave Policy </button>
+
+
+
+<script>
+    async function saveLeavePolicy() {
+        const model = {
+            Year: document.getElementById('leaveYear').value, // Example input ID
+            AnnualLeaveBalance: document.getElementById('annualLeaveBalance').value,
+            ExpiryDate: document.getElementById('expiryDate').value
+        };
+
+        const response = await fetch('/Admin/SaveLeavePolicy', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(model)
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert(result.message);
+        } else {
+            alert(`Error: ${result.message}`);
+        }
+    }
+
+</script>
