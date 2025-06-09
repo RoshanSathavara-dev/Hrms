@@ -1,0 +1,98 @@
+﻿@* Remove the model declaration since we don't need it *@
+
+<div class="modal fade" id="deleteWorkWeekRuleModal" tabindex="-1" role="dialog" aria-labelledby="deleteWorkWeekRuleModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteWorkWeekRuleModalLabel">Delete Work Week Rule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the work week rule "<span id="ruleName"></span>"?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert container for notifications -->
+<div id="alertContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+<script>
+    function showDeleteModal(id, name) {
+        $('#ruleName').text(name);
+        $('#deleteWorkWeekRuleModal').modal('show');
+
+        // Update the confirm button's click handler
+        $('#confirmDelete').off('click').on('click', function() {
+            deleteWorkWeekRule(id);
+        });
+    }
+
+    function showAlert(message, type) {
+        const alertHtml = `
+            <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+
+        const alertElement = $(alertHtml);
+        $('#alertContainer').append(alertElement);
+
+        // Auto dismiss after 3 seconds
+        setTimeout(() => {
+            alertElement.alert('close');
+        }, 3000);
+    }
+
+    function deleteWorkWeekRule(id) {
+        // Show loading state
+        $('#confirmDelete').prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Deleting...');
+
+        $.ajax({
+            url: '@Url.Action("DeleteWorkWeekRule", "Admin")',
+            type: 'POST',
+            data: { id: id },
+            success: function(result) {
+                if (result.success) {
+                    // Close the modal
+                    $('#deleteWorkWeekRuleModal').modal('hide');
+
+                    // Show success message
+                    showAlert('Work week rule deleted successfully', 'success');
+
+                    // Remove the row from the table with animation
+                    const row = $(`#rule-${id}`);
+                    row.fadeOut(400, function() {
+                        row.remove();
+
+                        // Check if table is empty
+                        if ($('table tbody tr').length === 0) {
+                            $('table tbody').append('<tr><td colspan="5" class="text-center">No work week rules found</td></tr>');
+                        }
+                    });
+                } else {
+                    // Show error message
+                    showAlert(result.message || 'Error deleting work week rule', 'danger');
+                    // Reset button state
+                    $('#confirmDelete').prop('disabled', false).text('Delete');
+                }
+            },
+            error: function() {
+                showAlert('An error occurred while deleting the work week rule', 'danger');
+                // Reset button state
+                $('#confirmDelete').prop('disabled', false).text('Delete');
+            }
+        });
+    }
+
+    // Reset modal state when it's hidden
+    $('#deleteWorkWeekRuleModal').on('hidden.bs.modal', function () {
+        $('#confirmDelete').prop('disabled', false).text('Delete');
+    });
+</script>

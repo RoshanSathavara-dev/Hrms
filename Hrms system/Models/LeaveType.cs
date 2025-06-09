@@ -45,6 +45,7 @@ namespace Hrms_system.Models
         public bool StartAccrualFromCurrentDate { get; set; }
 
         public bool CreditOnFirstDayOfMonth { get; set; }
+        public bool IsLossOfPay { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }

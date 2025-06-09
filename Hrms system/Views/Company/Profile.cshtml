@@ -25,71 +25,342 @@
 
 <div class="row">
     <div class="col-lg-8">
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-building me-2"></i>Basic Information</h5>
+        <!-- Horizontal Scrollable Tabs -->
+        <div class="tabs-container">
+            <div class="nav-tabs-scrollable">
+                <ul class="nav nav-tabs" id="companyProfileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="basic-info-tab" data-bs-toggle="tab" data-bs-target="#basic-info" type="button" role="tab" aria-controls="basic-info" aria-selected="true">
+                            <i class="fas fa-info-circle me-1"></i> Basic Info
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="address-tab" data-bs-toggle="tab" data-bs-target="#address" type="button" role="tab" aria-controls="address" aria-selected="false">
+                            <i class="fas fa-map-marker-alt me-1"></i> Addresses
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="departments-tab" data-bs-toggle="tab" data-bs-target="#departments" type="button" role="tab" aria-controls="departments" aria-selected="false">
+                            <i class="fas fa-sitemap me-1"></i> Departments
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="designations-tab" data-bs-toggle="tab" data-bs-target="#designations" type="button" role="tab" aria-controls="designations" aria-selected="false">
+                            <i class="fas fa-user-tie me-1"></i> Designations
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="announcements-tab" data-bs-toggle="tab" data-bs-target="#announcements" type="button" role="tab" aria-controls="announcements" aria-selected="false">
+                            <i class="fas fa-bullhorn me-1"></i> Announcements
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="policies-tab" data-bs-toggle="tab" data-bs-target="#policies" type="button" role="tab" aria-controls="policies" aria-selected="false">
+                            <i class="fas fa-file-contract me-1"></i> Policies
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="admin-tab" data-bs-toggle="tab" data-bs-target="#admin" type="button" role="tab" aria-controls="admin" aria-selected="false">
+                            <i class="fas fa-cog me-1"></i> Admin
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="statutory-tab" data-bs-toggle="tab" data-bs-target="#statutory" type="button" role="tab" aria-controls="statutory" aria-selected="false">
+                            <i class="fas fa-gavel me-1"></i> Statutory
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="myplan-tab" data-bs-toggle="tab" data-bs-target="#myplan" type="button" role="tab" aria-controls="myplan" aria-selected="false">
+                            <i class="fas fa-tasks me-1"></i> My Plan
+                        </button>
+                    </li>
+                </ul>
             </div>
-            <div class="card-body">
-                <form asp-action="Profile">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                    <input type="hidden" asp-for="Id" />
 
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label asp-for="CompanyName" class="form-label"></label>
-                                <input asp-for="CompanyName" class="form-control" />
-                                <span asp-validation-for="CompanyName" class="text-danger"></span>
+            <!-- Scroll buttons -->
+            <button class="scroll-button scroll-left" onclick="scrollTabs(-100)">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="scroll-button scroll-right" onclick="scrollTabs(100)">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content mt-3" id="companyProfileTabsContent">
+            <!-- Basic Info Tab -->
+            <div class="tab-pane fade show active" id="basic-info" role="tabpanel" aria-labelledby="basic-info-tab">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-building me-2"></i>Basic Information</h5>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="Profile">
+                            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                            <input type="hidden" asp-for="Id" />
+
+                            <div class="row g-3">
+                                <div class="col-md-12">
+                                    <div class="form-group">
+                                        <label asp-for="CompanyName" class="form-label"></label>
+                                        <input asp-for="CompanyName" class="form-control" />
+                                        <span asp-validation-for="CompanyName" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="GSTNumber" class="form-label"></label>
+                                        <input asp-for="GSTNumber" class="form-control" />
+                                        <span asp-validation-for="GSTNumber" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="ContactEmail" class="form-label"></label>
+                                        <input asp-for="ContactEmail" class="form-control" />
+                                        <span asp-validation-for="ContactEmail" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label asp-for="PhoneNumber" class="form-label"></label>
+                                        <input asp-for="PhoneNumber" class="form-control" />
+                                        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label class="form-label">Created Date</label>
+                                        <input class="form-control" value="@Model.CreatedDate.ToString("dd MMM yyyy")" readonly />
+                                    </div>
+                                </div>
+
+                                <div class="col-12 mt-4">
+                                    <button type="submit" class="btn btn-admin">
+                                        <i class="fas fa-save me-1"></i> Save Changes
+                                    </button>
+                                </div>
                             </div>
-                        </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
 
-                        <div class="col-md-12">
-                            <div class="form-group">
-                                <label asp-for="Address" class="form-label"></label>
-                                <textarea asp-for="Address" class="form-control" rows="3"></textarea>
-                                <span asp-validation-for="Address" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="GSTNumber" class="form-label"></label>
-                                <input asp-for="GSTNumber" class="form-control" />
-                                <span asp-validation-for="GSTNumber" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="ContactEmail" class="form-label"></label>
-                                <input asp-for="ContactEmail" class="form-control" />
-                                <span asp-validation-for="ContactEmail" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label asp-for="PhoneNumber" class="form-label"></label>
-                                <input asp-for="PhoneNumber" class="form-control" />
-                                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Created Date</label>
-                                <input class="form-control" value="@Model.CreatedDate.ToString("dd MMM yyyy")" readonly />
-                            </div>
-                        </div>
-
-                        <div class="col-12 mt-4">
-                            <button type="submit" class="btn btn-admin">
-                                <i class="fas fa-save me-1"></i> Save Changes
+            <!-- Addresses Tab -->
+            <div class="tab-pane fade" id="address" role="tabpanel" aria-labelledby="address-tab">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="fas fa-map-marker-alt me-2"></i>Addresses</h5>
+                        <div>
+                            @if (Model.Addresses == null || !Model.Addresses.Any(a => a.AddressType == "Registered"))
+                            {
+                                <button type="button" class="btn btn-sm btn-primary" onclick="openAddAddressModal('@Model.Id', 'Registered')">
+                                    <i class="fas fa-plus me-1"></i> Add Registered Office
+                                </button>
+                            }
+                            @if (Model.Addresses == null || !Model.Addresses.Any(a => a.AddressType == "Corporate"))
+                            {
+                                <button type="button" class="btn btn-sm btn-primary ms-2" onclick="openAddAddressModal('@Model.Id', 'Corporate')">
+                                    <i class="fas fa-plus me-1"></i> Add Corporate Office
+                                </button>
+                            }
+                            <button type="button" class="btn btn-sm btn-primary ms-2" onclick="openAddAddressModal('@Model.Id', '')">
+                                <i class="fas fa-plus me-1"></i> Add Custom Address
                             </button>
                         </div>
                     </div>
-                </form>
+                    <div class="card-body">
+                        @if (Model.Addresses != null && Model.Addresses.Any())
+                        {
+                            <div class="list-group">
+                                @foreach (var address in Model.Addresses.OrderBy(a => a.AddressType == "Registered" ? 0 : a.AddressType == "Corporate" ? 1 : 2))
+                                {
+                                    <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>@address.AddressType</strong><br />
+                                            @address.AddressLine1<br />
+                                            @if (!string.IsNullOrEmpty(address.AddressLine2))
+                                            {
+                                                <span>@address.AddressLine2<br /></span>
+                                            }
+                                            @address.City, @address.State @address.Pincode<br />
+                                            @address.Country
+                                        </div>
+                                        <div>
+                                            <button type="button" class="btn btn-sm btn-secondary me-1" onclick="openEditAddressModal('@address.Id')">
+                                                <i class="fas fa-edit"></i> Edit
+                                            </button>
+                                            @if (address.AddressType != "Registered")
+                                            {
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="deleteAddress('@address.Id')">
+                                                    <i class="fas fa-trash-alt"></i> Delete
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <p>No addresses found for this company.</p>
+                        }
+                    </div>
+
+                </div>
             </div>
+
+            <!-- Departments Tab -->
+            <div class="tab-pane fade" id="departments" role="tabpanel" aria-labelledby="departments-tab">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-sitemap me-2"></i>Departments</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped table-hover" id="departmentsTable">
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Sub Departments</th>
+                                    <th>Department Head</th>
+                                    <th>Employees (Auto calculated)</th>
+                                    <th></th> @* Action column *@
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @* Existing departments will be loaded here via backend *@
+                                @if (Model.Departments != null && Model.Departments.Any())
+                                {
+                                    foreach (var department in Model.Departments)
+                                    {
+                                        <tr>
+                                            <td>@department.Name</td>
+                                            @* Displaying SubDepartments - current model has string. Update if model changes. *@
+                                            <td>@department.SubDepartments</td> @* Assuming SubDepartments is a string or needs formatting *@
+                                            <td>@department.DepartmentHeadId</td> @* Displaying ID for now, needs logic to show Employee Name *@
+                                            <td>0</td> @* Placeholder *@
+                                            <td>
+                                                @* Add Edit/Delete buttons here if needed in the future *@
+                                                <button type="button" class="btn btn-sm btn-danger delete-department-btn" data-id="@department.Id">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+
+                                @* Input row for adding new departments - initially hidden or added by JS *@
+                                <tr id="newDepartmentRow" style="display: none;">
+                                    <td><input type="text" class="form-control new-department-name" placeholder="Department Name" /></td>
+                                    <td>
+                                        @* Container for multiple sub-department inputs *@
+                                        <div id="newSubDepartmentsContainer">
+                                            <div class="input-group input-group-sm mb-1">
+                                                <input type="text" class="form-control new-sub-department-input" placeholder="Sub Department Name" />
+                                                <button type="button" class="btn btn-outline-danger btn-sm remove-sub-department"><i class="fas fa-trash-alt"></i></button>
+                                            </div>
+                                        </div>
+                                        @* Button to add more sub-department inputs *@
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" id="addSubDepartmentBtn">
+                                            <i class="fas fa-plus me-1"></i> Add Sub Department
+                                        </button>
+                                    </td>
+                                    <td>
+                                        @* Department Head dropdown - will be populated by JS *@
+                                        <select class="form-select new-department-head">
+                                            <option value="">Select Head</option>
+                                            @* Options will be loaded via backend/JS - requires employee list *@
+                                        </select>
+                                    </td>
+                                    <td></td> @* No employee count for new row *@
+                                    <td>
+                                        @* Button to remove the new department row *@
+                                        <button type="button" class="btn btn-sm btn-danger remove-new-department-row">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                @* Placeholder if no departments - adjust if displaying multiple sub-departments per row *@
+                                @if (Model.Departments == null || !Model.Departments.Any())
+                                {
+                                    <tr id="noDepartmentsRow">
+                                        <td colspan="5">No departments added yet.</td> @* Increased colspan to 5 *@
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <div class="mt-3">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="addDepartmentRowBtn">
+                                <i class="fas fa-plus me-1"></i> Add Department
+                            </button>
+                        </div>
+
+                        @* Save/Cancel buttons - Initially hidden *@
+                        <div class="mt-4 text-end" id="departmentSaveCancelButtons" style="display: none;">
+                            <button type="button" class="btn btn-secondary me-2" id="cancelDepartmentsBtn">CANCEL</button>
+                            <button type="button" class="btn btn-primary" id="saveDepartmentsBtn">SAVE</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="designations" role="tabpanel" aria-labelledby="designations-tab">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-user-tie me-2"></i>Designations</h5>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Designation</th>
+                                    <th>Employees (Auto calculated)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                @if (Model.Designations != null && Model.Designations.Any())
+                                {
+                                    foreach (var designation in Model.Designations)
+                                    {
+                                        <tr>
+                                            <td>@designation.Title</td>
+                                            <td>0</td> 
+                                        </tr>
+                                    }
+                                }
+                              
+                                @if (Model.Designations == null || !Model.Designations.Any())
+                                {
+                                    <tr>
+                                        <td colspan="2">No designations added yet.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+
+                        <div class="mt-4">
+                            <h6>Add New Designation</h6>
+                            <div class="input-group">
+                                <input type="text" id="newDesignationTitle" class="form-control" placeholder="Enter Designation Title" />
+                                <button class="btn btn-primary" type="button" id="addDesignationBtn">
+                                    <i class="fas fa-plus me-1"></i> Add
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Continue with other tabs... -->
         </div>
     </div>
 
@@ -101,12 +372,12 @@
             <div class="card-body">
                 <div class="text-center mb-4">
                     <div class="company-logo-container mb-3">
-                    <img id="companyLogoPreview"
-                         src="@(Url.Content(!string.IsNullOrEmpty(Model.LogoPath) ? Model.LogoPath : "~/images/company-logo.png"))"
-                         alt="Company Logo"
-                         class="img-fluid"
-                         style="max-height: 150px;" />
-                         </div>
+                        <img id="companyLogoPreview"
+                             src="@(Url.Content(!string.IsNullOrEmpty(Model.LogoPath) ? Model.LogoPath : "~/images/company-logo.png"))"
+                             alt="Company Logo"
+                             class="img-fluid"
+                             style="max-height: 150px;" />
+                    </div>
                     <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#logoUploadModal">
                         <i class="fas fa-upload me-1"></i> Upload Logo
                     </button>
@@ -149,7 +420,16 @@
     </div>
 </div>
 
-<!-- Logo Upload Modal -->
+@* Modal for Adding/Editing Addresses *@
+<div class="modal fade" id="addEditAddressModal" tabindex="-1" aria-labelledby="addEditAddressModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" id="addEditAddressModalContent">
+            @* Partial view will be loaded here *@
+        </div>
+    </div>
+</div>
+
+@* Modal for Logo Upload *@
 <div class="modal fade" id="logoUploadModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -176,30 +456,210 @@
     </div>
 </div>
 
+<style>
+    .tabs-container {
+        position: relative;
+        margin-bottom: 1rem;
+    }
 
-    <style>
-        .company-logo-container {
-            width: 200px;
-            height: 200px;
-            margin: 0 auto;
-            border: 1px dashed #dee2e6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f8f9fa;
-            border-radius: 8px;
+    .nav-tabs-scrollable {
+        overflow-x: auto;
+        white-space: nowrap;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 0 30px;
+    }
+
+        .nav-tabs-scrollable::-webkit-scrollbar {
+            display: none;
         }
 
-        .company-stats {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
+    .nav-tabs {
+        flex-wrap: nowrap;
+        border-bottom: none;
+    }
+
+        .nav-tabs .nav-item {
+            display: inline-block;
+            float: none;
         }
-    </style>
 
+        .nav-tabs .nav-link {
+            border-radius: 0;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 0.75rem 1.25rem;
+            color: #6c757d;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
 
+            .nav-tabs .nav-link:hover {
+                border-bottom-color: #dee2e6;
+                color: #495057;
+            }
+
+            .nav-tabs .nav-link.active {
+                color: #0d6efd;
+                border-bottom-color: #0d6efd;
+                background-color: transparent;
+            }
+
+            .nav-tabs .nav-link i {
+                margin-right: 5px;
+            }
+
+    .scroll-button {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 30px;
+        background: white;
+        border: none;
+        color: #6c757d;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+        .scroll-button:hover {
+            color: #0d6efd;
+            background: rgba(0,0,0,0.05);
+        }
+
+    .scroll-left {
+        left: 0;
+        box-shadow: 5px 0 5px -5px rgba(0,0,0,0.1);
+    }
+
+    .scroll-right {
+        right: 0;
+        box-shadow: -5px 0 5px -5px rgba(0,0,0,0.1);
+    }
+
+    .company-logo-container {
+        width: 200px;
+        height: 200px;
+        margin: 0 auto;
+        border: 1px dashed #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .company-stats {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+    }
+
+    .list-group-item strong {
+        text-transform: capitalize;
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
 
     <script>
+        // Function to handle tab scrolling (keep this outside document ready)
+        function scrollTabs(scrollAmount) {
+            const container = document.querySelector('.nav-tabs-scrollable');
+            container.scrollBy({
+                left: scrollAmount,
+                behavior: 'smooth'
+            });
+        }
+
+        // Function to activate a specific tab (keep this outside document ready if called by inline onclick)
+        function activateTab(tabId) {
+            $('.nav-tabs .nav-link').removeClass('active');
+            $('.tab-pane').removeClass('show active');
+            $(`#${tabId}-tab`).addClass('active');
+            $(`#${tabId}`).addClass('show active');
+        }
+
+        // Function to open the Add Address modal (keep this outside document ready)
+        function openAddAddressModal(companyId, addressType) {
+            $.ajax({
+                url: '@Url.Action("AddAddress", "Company")',
+                type: 'GET',
+                data: { companyId: companyId, addressType: addressType },
+                success: function(data) {
+                    $('#addEditAddressModalContent').html(data);
+                    $('#addEditAddressModal').modal('show');
+                    if (addressType) {
+                        $('#addEditAddressForm input[name="AddressType"]').val(addressType);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    if (xhr.status === 401) {
+                        alert('Your session has expired. Please refresh the page and try again.');
+                        window.location.reload();
+                    } else {
+                        alert('An error occurred while loading the form. Please try again.');
+                    }
+                }
+            });
+        }
+
+        // Function to open the Edit Address modal (keep this outside document ready)
+        function openEditAddressModal(addressId) {
+            $.ajax({
+                url: '@Url.Action("EditAddress", "Company")',
+                type: 'GET',
+                data: { id: addressId },
+                success: function(data) {
+                    $('#addEditAddressModalContent').html(data);
+                    $('#addEditAddressModal').modal('show');
+                },
+                error: function(xhr, status, error) {
+                    if (xhr.status === 401) {
+                        alert('Your session has expired. Please refresh the page and try again.');
+                        window.location.reload();
+                    } else {
+                        alert('An error occurred while loading the form. Please try again.');
+                    }
+                }
+            });
+        }
+
+        // Function to handle address deletion (keep this outside document ready)
+        function deleteAddress(addressId) {
+             if (confirm("Are you sure you want to delete this address?")) {
+                 $.ajax({
+                     url: '@Url.Action("DeleteAddress", "Company")',
+                     type: 'POST',
+                     data: {
+                         id: addressId,
+                         __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                     },
+                     success: function(response) {
+                         if (response && response.success) {
+                             alert(response.message);
+                             // Corrected URL to stay on the address tab
+                             window.location.href = window.location.pathname + '?tab=address';
+                         } else {
+                             alert("Error deleting address: " + (response && response.message ? response.message : "Unknown error"));
+                         }
+                     },
+                     error: function(xhr, status, error) {
+                         if (xhr.status === 401) {
+                             alert('Your session has expired. Please refresh the page and try again.');
+                             window.location.reload();
+                         } else {
+                             alert("An error occurred while deleting the address. Please try again.");
+                         }
+                     }
+                 });
+             }
+         }
+
+
         $(document).ready(function() {
             // Logo upload preview
             $('#logoFile').change(function() {
@@ -214,37 +674,293 @@
             });
 
             // Upload logo button click
-         $('#uploadLogoBtn').click(function () {
-            var fileInput = document.getElementById('logoFile');
-            var file = fileInput.files[0];
+            $('#uploadLogoBtn').click(function () {
+                var fileInput = document.getElementById('logoFile');
+                var file = fileInput.files[0];
 
-            if (!file) {
-                alert("Please select a file to upload.");
-                return;
+                if (!file) {
+                    alert("Please select a file to upload.");
+                    return;
+                }
+
+                var formData = new FormData();
+                formData.append("file", file);
+
+                $.ajax({
+                    url: '@Url.Action("UploadLogo", "Company")',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            $('#logoUploadModal').modal('hide');
+                            $('#companyLogoPreview').attr('src', response.imageUrl + '?t=' + new Date().getTime());
+                            alert(response.message);
+                        } else {
+                            alert(response.message);
+                        }
+                    },
+                    error: function () {
+                        alert("An error occurred while uploading the logo.");
+                    }
+                });
+            });
+
+            // Check if we need to activate a specific tab on page load
+            const urlParams = new URLSearchParams(window.location.search);
+            const activeTab = urlParams.get('tab');
+
+            if (activeTab) {
+                // Check if the requested tab ID exists
+                if ($(`#${activeTab}-tab`).length) {
+                    activateTab(activeTab);
+                } else {
+                    // Default to basic-info if the requested tab doesn't exist
+                    activateTab('basic-info');
+                }
+            } else {
+                 // Activate the default tab (basic-info) if no tab is specified
+                 activateTab('basic-info');
             }
 
-            var formData = new FormData();
-            formData.append("file", file);
+             // Handle Add Designation button click
+              $('#addDesignationBtn').click(function() {
+                  var designationTitleInput = $('#newDesignationTitle');
+                  var designationTitle = designationTitleInput.val().trim();
 
-            $.ajax({
-                url: '@Url.Action("UploadLogo", "Company")',
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (response) {
-                    if (response.success) {
-                        $('#logoUploadModal').modal('hide');
-                        $('#companyLogoPreview').attr('src', response.imageUrl + '?t=' + new Date().getTime());
-                        alert(response.message);
-                    } else {
-                        alert(response.message);
-                    }
-                },
-                error: function () {
-                    alert("An error occurred while uploading the logo.");
+                  if (designationTitle === '') {
+                      alert('Please enter a designation title.');
+                      return;
+                  }
+
+                  // Assuming CompanyId is available in a hidden field or ViewBag
+                  var companyId = '@Model.Id';// Make sure Company.Id is accessible here
+
+                  $.ajax({
+                      url: '@Url.Action("AddDesignation", "Company")',
+                      type: 'POST',
+                      contentType: 'application/json',
+                      data: JSON.stringify({ title: designationTitle, companyId: companyId }),
+                      success: function(response) {
+                          if (response.success) {
+                              alert(response.message);
+                              designationTitleInput.val(''); // Clear the input
+                              // Refresh the page to update the list, staying on the designations tab
+                             window.location.href = window.location.pathname + '?tab=designations';
+                          } else {
+                              alert("Error adding designation: " + (response.message || "Unknown error"));
+                          }
+                      },
+                      error: function(xhr, status, error) {
+                            if (xhr.status === 401) {
+                                alert('Your session has expired. Please refresh the page and try again.');
+                                window.location.reload();
+                            } else {
+                                alert("An error occurred while adding the designation. Please try again.");
+                            }
+                      }
+                  });
+              });
+
+            // Handle Add Department Row button click
+            $('#addDepartmentRowBtn').click(function() {
+                $('#newDepartmentRow').show();
+                $('#noDepartmentsRow').hide(); // Hide the "No departments" message
+                $('#addDepartmentRowBtn').hide(); // Optionally hide the add button when the new row is visible
+                $('#departmentSaveCancelButtons').show(); // Show save/cancel buttons
+            });
+
+            // Handle Remove New Department Row button click
+            $('.remove-new-department-row').click(function() {
+                $('#newDepartmentRow').hide();
+                // Clear the input fields and remove added sub-department inputs when hiding
+                $('#newDepartmentRow .new-department-name').val('');
+                $('#newSubDepartmentsContainer').empty().append(`
+                     <div class="input-group input-group-sm mb-1">
+                         <input type="text" class="form-control new-sub-department-input" placeholder="Sub Department Name" />
+                         <button type="button" class="btn btn-outline-danger btn-sm remove-sub-department"><i class="fas fa-trash-alt"></i></button>
+                     </div>
+                `);
+                $('#newDepartmentRow .new-department-head').val('');
+
+                // Hide save/cancel buttons and show "No departments" message if no departments are present
+                if ($('#departmentsTable tbody tr:not(#newDepartmentRow, #noDepartmentsRow)').length === 0) {
+                     $('#noDepartmentsRow').show();
+                     $('#departmentSaveCancelButtons').hide();
+                }
+
+                $('#addDepartmentRowBtn').show(); // Show the add button again
+            });
+
+             // Handle Cancel Departments button click
+             $('#cancelDepartmentsBtn').click(function() {
+                // Hide the new department row and clear its inputs
+                $('#newDepartmentRow').hide();
+                $('#newDepartmentRow .new-department-name').val('');
+                $('#newSubDepartmentsContainer').empty().append(`
+                     <div class="input-group input-group-sm mb-1">
+                         <input type="text" class="form-control new-sub-department-input" placeholder="Sub Department Name" />
+                         <button type="button" class="btn btn-outline-danger btn-sm remove-sub-department"><i class="fas fa-trash-alt"></i></button>
+                     </div>
+                `);
+                $('#newDepartmentRow .new-department-head').val('');
+
+                // Always hide the save/cancel buttons when canceling the add operation
+                $('#departmentSaveCancelButtons').hide();
+
+                // Show the "Add Department" button again
+                $('#addDepartmentRowBtn').show();
+
+                // Show "No departments" message if there are no existing department rows visible
+                if ($('#departmentsTable tbody tr:not(#newDepartmentRow, #noDepartmentsRow)').length === 0) {
+                     $('#noDepartmentsRow').show();
                 }
             });
+
+
+            // Handle Add Sub Department button click
+            $('#addSubDepartmentBtn').click(function() {
+                $('#newSubDepartmentsContainer').append(`
+                    <div class="input-group input-group-sm mb-1">
+                        <input type="text" class="form-control new-sub-department-input" placeholder="Sub Department Name" />
+                        <button type="button" class="btn btn-outline-danger btn-sm remove-sub-department"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `);
+            });
+
+            // Handle Remove Sub Department button click (using event delegation)
+            $('#newSubDepartmentsContainer').on('click', '.remove-sub-department', function() {
+                $(this).closest('.input-group').remove();
+                 // If no sub-department inputs remain, add one back (optional, based on desired UX)
+                 if ($('#newSubDepartmentsContainer .input-group').length === 0) {
+                     $('#newSubDepartmentsContainer').append(`
+                         <div class="input-group input-group-sm mb-1">
+                             <input type="text" class="form-control new-sub-department-input" placeholder="Sub Department Name" />
+                             <button type="button" class="btn btn-outline-danger btn-sm remove-sub-department"><i class="fas fa-trash-alt"></i></button>
+                         </div>
+                     `);
+                 }
+            });
+
+
+            // Handle Save Departments button click
+            $('#saveDepartmentsBtn').click(function() {
+                var departmentsToSave = [];
+                var companyId = '@Model.Id'; // Get company ID from the model
+
+                // Collect data from existing department rows
+                $('#departmentsTable tbody tr:not(#newDepartmentRow, #noDepartmentsRow)').each(function() {
+                    var row = $(this);
+                    // Extract sub-department names from the cell (assuming they are displayed as a single string)
+                    var existingSubDepartmentsText = row.find('td:eq(1)').text().trim();
+
+                    var department = {
+                        Id: row.find('.delete-department-btn').data('id') || 0, // Get ID from data attribute
+                        Name: row.find('td:eq(0)').text().trim(),
+                        SubDepartments: existingSubDepartmentsText, // Use the text from the cell
+                        DepartmentHeadId: null, // Placeholder - needs logic to get selected employee ID
+                        CompanyId: companyId
+                    };
+                    departmentsToSave.push(department);
+                });
+
+                // Collect data from the new department input row if visible
+                if ($('#newDepartmentRow').is(':visible')) {
+                    var newDepartmentName = $('#newDepartmentRow .new-department-name').val().trim();
+                    var newSubDepartmentInputs = $('#newSubDepartmentsContainer .new-sub-department-input');
+                    var newDepartmentHeadId = $('#newDepartmentRow .new-department-head').val();
+
+                    // Collect sub-department values from the input fields
+                    var newSubDepartments = newSubDepartmentInputs.map(function() {
+                        return $(this).val().trim();
+                    }).get().filter(sub => sub !== ''); // Get array and filter out empty strings
+
+                    if (newDepartmentName !== '') {
+                         var newDepartment = {
+                            Id: 0, // New department
+                            Name: newDepartmentName,
+                            SubDepartments: newSubDepartments.join(', '), // Join sub-departments into a comma-separated string
+                            DepartmentHeadId: newDepartmentHeadId !== '' ? parseInt(newDepartmentHeadId) : null, // Parse to int if not empty
+                            CompanyId: companyId
+                        };
+                        departmentsToSave.push(newDepartment);
+                    } else if (newSubDepartments.length > 0 || newDepartmentHeadId !== '') {
+                        // Alert if other fields are filled but name is empty for a new row
+                         alert('Please enter a Department Name for the new row.');
+                         return; // Stop the save process
+                    }
+                }
+
+                console.log('Departments to save:', departmentsToSave);
+
+                if (departmentsToSave.length === 0 && $('#departmentsTable tbody tr:not(#newDepartmentRow, #noDepartmentsRow)').length === 0) {
+                    alert('No departments to save.');
+                    return;
+                }
+
+
+                $.ajax({
+                    url: '@Url.Action("SaveDepartments", "Company")',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(departmentsToSave),
+                   success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            // Refresh the page to show updated list, staying on departments tab
+                            window.location.href = window.location.pathname + '?tab=departments';
+                        } else {
+                            alert("Error saving departments: " + (response.message || "Unknown error"));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                         if (xhr.status === 401) {
+                              alert('Your session has expired. Please refresh the page and try again.');
+                              window.location.reload();
+                          } else {
+                            alert("An error occurred while saving departments. Please try again.");
+                          }
+                    }
+                });
+            });
+
+             $('#departmentsTable tbody').on('click', '.delete-department-btn', function() {
+            var departmentId = $(this).data('id');
+
+            if (confirm("Are you sure you want to delete this department?")) {
+                $.ajax({
+                    url: '@Url.Action("DeleteDepartment", "Company")',
+                    type: 'POST',
+                    data: {
+                        id: departmentId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() // Include Anti-Forgery Token
+                    },
+                    success: function(response) {
+                        if (response && response.success) {
+                            alert(response.message);
+                            // Refresh the page to show the updated list, staying on departments tab
+                            window.location.href = window.location.pathname + '?tab=departments';
+                        } else {
+                            alert("Error deleting department: " + (response && response.message ? response.message : "Unknown error"));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                         if (xhr.status === 401) {
+                              alert('Your session has expired. Please refresh the page and try again.');
+                              window.location.reload();
+                          } else {
+                              alert("An error occurred while deleting the department. Please try again.");
+                          }
+                    }
+                });
+            }
         });
-        });
+
+
+
+        }); // Correct closing for $(document).ready function
+
+
     </script>
+}

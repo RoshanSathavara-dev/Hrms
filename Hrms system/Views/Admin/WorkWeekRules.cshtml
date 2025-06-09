@@ -1,0 +1,211 @@
+﻿@model List<Hrms_system.Models.WorkWeekRule>
+
+@{
+    ViewData["Title"] = "Work Week Rules";
+    Layout = "_AdminLayout";
+}
+
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using Newtonsoft.Json
+
+<style>
+    /* Container for the whole pattern area in the list view */
+    .weekly-pattern-container-list {
+        border: 1px solid #e0e0e0;
+        padding: 5px;
+        border-radius: 4px;
+        background-color: #f9f9f9;
+        display: inline-block;
+        overflow: hidden;
+    }
+
+    /* Grid for days and weeks in the list view */
+    .weekly-pattern-grid-list {
+        display: grid;
+        grid-template-columns: 40px repeat(7, 20px);
+        gap: 1px;
+        border-top: 1px solid #e0e0e0;
+        border-left: 1px solid #e0e0e0;
+    }
+
+    /* Base cell style for the list view */
+    .grid-cell-list {
+        width: 100%;
+        height: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-right: 1px solid #e0e0e0;
+        border-bottom: 1px solid #e0e0e0;
+        box-sizing: border-box;
+        font-size: 9px;
+    }
+
+    /* Style for day cells in the list view */
+    .day-cell-list {
+        font-weight: bold;
+        color: white;
+    }
+
+    .working-day-list {
+        background-color: #28a745;
+    }
+
+    .weekly-off-list {
+        background-color: #dc3545;
+    }
+
+    /* Style for day labels in the list view */
+    .day-label-list {
+        font-weight: bold;
+        background-color: #e0e0e0;
+    }
+
+    /* Style for week labels in the list view */
+    .week-label-list {
+        justify-content: flex-start;
+        padding-left: 3px;
+        font-weight: bold;
+        background-color: #e0e0e0;
+    }
+
+    /* Legend Styling for the list view */
+    .legend-list-small {
+        margin-top: 5px;
+        font-size: 0.7em;
+        text-align: center;
+    }
+
+        .legend-list-small span {
+            margin-right: 8px;
+        }
+
+        .legend-list-small .badge {
+            width: 12px;
+            height: 12px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 2px;
+            border-radius: 3px;
+        }
+
+        .legend-list-small .badge-success {
+            background-color: #28a745;
+        }
+
+        .legend-list-small .badge-danger {
+            background-color: #dc3545;
+        }
+
+    /* Action buttons styling */
+    .action-buttons a {
+        margin-right: 10px;
+        text-decoration: none;
+    }
+
+    .action-buttons .btn-delete {
+        color: #dc3545;
+    }
+
+        .action-buttons .btn-delete:hover {
+            color: #bd2130;
+        }
+</style>
+
+<div class="container-fluid">
+    <h2>Work Week Rules</h2>
+
+    <p>
+        <a asp-action="CreateWorkWeekRule" class="btn btn-primary">Create New Rule</a>
+    </p>
+
+    <div class="legend-list-small mb-3">
+        <strong>Legend:</strong>
+        <span class="badge bg-success"></span> W Working Day
+        <span class="badge bg-danger"></span> O Weekly Off
+    </div>
+
+    <table class="table table-bordered table-hover">
+        <thead>
+            <tr>
+                <th>Rule Name</th>
+                <th>Description</th>
+                <th>Is Default</th>
+                <th>Working Days</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr id="rule-@item.Id">
+                    <td>@item.Name</td>
+                    <td>@(string.IsNullOrEmpty(item.Description) ? "-" : item.Description)</td>
+                    <td>@(item.IsDefault ? "Yes" : "No")</td>
+                    <td>
+                        <div class="weekly-pattern-container-list">
+                            <div class="weekly-pattern-grid-list" id="weekly-pattern-grid-list-@item.Id">
+                                @* Grid will be rendered by JavaScript *@
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(item.WeeklyPatternJson))
+                        {
+                            <script>
+                                var patternData_list_@item.Id = @Html.Raw(item.WeeklyPatternJson);
+                            </script>
+                        }
+                    </td>
+                    <td class="action-buttons">
+                        <a asp-action="EditWorkWeekRule" asp-route-id="@item.Id" class="btn btn-sm btn-primary">Edit</a>
+                        <a href="javascript:void(0)" onclick="showDeleteModal(@item.Id, '@item.Name')" class="btn btn-sm btn-delete">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@* Include the delete modal partial view *@
+<partial name="_DeleteWorkWeekRuleModal" />
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('.weekly-pattern-grid-list').each(function() {
+                const gridContainer = $(this);
+                const ruleId = gridContainer.attr('id').replace('weekly-pattern-grid-list-', '');
+                const pattern = window['patternData_list_' + ruleId];
+
+                // Clear previous content
+                gridContainer.empty();
+
+                // Add day labels
+                const weekDaysShort = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+                weekDaysShort.forEach(day => {
+                    gridContainer.append($('<div class="grid-cell-list day-label-list">' + day + '</div>'));
+                });
+
+                if (pattern && Array.isArray(pattern) && pattern.length > 0) {
+                    // Render the grid cells
+                    for (let week = 0; week < pattern.length; week++) {
+                        // Add week label
+                        gridContainer.append($('<div class="grid-cell-list week-label-list">Wk ' + (week + 1) + '</div>'));
+
+                        for (let day = 0; day < pattern[week].length; day++) {
+                            const dayStatus = pattern[week][day];
+                            const cell = $('<div class="grid-cell-list day-cell-list"></div>');
+                            if (dayStatus === 1) {
+                                cell.addClass('working-day-list').text('W');
+                            } else {
+                                cell.addClass('weekly-off-list').text('O');
+                            }
+                            gridContainer.append(cell);
+                        }
+                    }
+                } else {
+                    gridContainer.append($('<span class="text-muted">No pattern set</span>'));
+                }
+            });
+        });
+    </script>
+}

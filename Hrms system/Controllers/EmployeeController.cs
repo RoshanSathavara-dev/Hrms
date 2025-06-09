@@ -140,6 +140,38 @@ namespace Hrms_system.Controllers
 
                 // Save Employee to DB
                 _context.Employees.Add(model);
+                await _context.SaveChangesAsync();
+
+                // Automatically assign Loss of Pay leave type
+                var lossOfPayLeaveType = await _context.LeaveTypes
+                    .FirstOrDefaultAsync(lt => lt.CompanyId == model.CompanyId && lt.IsLossOfPay);
+
+                if (lossOfPayLeaveType != null)
+                {
+                    var leaveAssignment = new LeaveAssignment
+                    {
+                        EmployeeId = model.Id,
+                        LeaveTypeId = lossOfPayLeaveType.Id,
+                        IsActive = true,
+                        StartDate = DateTime.UtcNow
+                    };
+                    _context.LeaveAssignments.Add(leaveAssignment);
+                    await _context.SaveChangesAsync();
+                }
+
+                // Automatically assign the company's default work week rule
+                var defaultWorkWeekRule = await _context.WorkWeekRules
+                    .FirstOrDefaultAsync(r => r.CompanyId == model.CompanyId && r.IsDefault);
+
+                if (defaultWorkWeekRule != null)
+                {
+                    model.WorkWeekRuleId = defaultWorkWeekRule.Id;
+                    _context.Employees.Update(model); // Mark as modified
+                    await _context.SaveChangesAsync();
+                }
+
+
+
                 // ✅ Send email with login credentials
                 var emailMessage = $@"
 Dear {model.FirstName},

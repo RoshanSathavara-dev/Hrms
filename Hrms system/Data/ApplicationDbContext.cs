@@ -47,7 +47,15 @@ namespace Hrms_system.Data
         public DbSet<LeaveAssignment> LeaveAssignments { get; set; }
 
 
+        public DbSet<WorkWeekRule> WorkWeekRules { get; set; }
 
+        public DbSet<Address> Addresses { get; set; }
+
+        public DbSet<Designation> Designations { get; set; }
+
+        public DbSet<Department> Departments { get; set; }
+
+        public DbSet<Announcement> Announcements { get; set; }
 
         // In ApplicationDbContext.cs
 
@@ -151,6 +159,14 @@ namespace Hrms_system.Data
             modelBuilder.Entity<Payment>(entity =>
             {
                 entity.Property(p => p.Amount).HasPrecision(18, 2);
+            });
+
+            modelBuilder.Entity<Announcement>(entity =>
+            {
+                entity.Property(a => a.Title).HasMaxLength(200).IsRequired();
+                entity.Property(a => a.Content).IsRequired();
+                entity.Property(a => a.CreatedDate).IsRequired();
+                entity.Property(a => a.IsActive).IsRequired();
             });
 
             modelBuilder.Entity<EmployeeLeaveBalance>(entity =>

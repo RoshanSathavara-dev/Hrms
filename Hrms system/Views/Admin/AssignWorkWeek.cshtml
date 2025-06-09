@@ -1,0 +1,184 @@
+﻿@model Hrms_system.ViewModels.AssignWorkWeekViewModel
+
+@{
+    ViewData["Title"] = "Assign Work Week";
+    Layout = "_AdminLayout";
+}
+
+<div class="container-fluid">
+    <h2>Assign Work Week Rules</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search Employee" id="employeeSearchInput">
+                        <button class="btn btn-outline-secondary" type="button" id="button-addon2"><i class="fas fa-search"></i></button>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div class="d-inline-block me-2">
+                        <label for="workWeekRuleSelect" class="form-label visually-hidden">Select Rule</label>
+                        <select class="form-select" id="workWeekRuleSelect">
+                            <option value="">-- Select Rule to Assign --</option>
+                            @foreach (var rule in Model.WorkWeekRules)
+                            {
+                                <option value="@rule.Id">@rule.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" id="assignRulesButton" disabled><i class="fas fa-check-circle"></i> Assign Rules</button>
+                </div>
+            </div>
+
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAllEmployees">
+                        </th>
+                        <th>ID</th>
+                        <th>Employee Name</th>
+                        <th>Department</th>
+                        <th>Rules Applied</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var employee in Model.Employees)
+                    {
+                        <tr data-employee-id="@employee.Id">
+                            <td>
+                                <input type="checkbox" class="employee-checkbox">
+                            </td>
+                            <td>@employee.Id</td> @* Displaying Employee Id instead of Employee Code if EmployeeCode is removed from model*@
+                            <td>@employee.FullName</td>
+                            <td>@employee.Department</td>
+                            <td>@employee.AssignedWorkWeekRuleName</td>
+                        </tr>
+                    }
+                    @if (!Model.Employees.Any())
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center">No employees found.</td> @* Adjusted colspan *@
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @* Pagination will go here later *@
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const selectAllCheckbox = $('#selectAllEmployees');
+            const employeeCheckboxes = $('.employee-checkbox');
+            const assignRulesButton = $('#assignRulesButton');
+            const workWeekRuleSelect = $('#workWeekRuleSelect');
+            const alertContainer = $('#alertContainer'); // Assuming you have an alert container as added for delete modal
+
+            // Enable/disable assign button based on checkbox selection and rule selection
+            function updateAssignButtonState() {
+                const anyEmployeeSelected = employeeCheckboxes.is(':checked');
+                const ruleSelected = workWeekRuleSelect.val() !== '';
+                assignRulesButton.prop('disabled', !(anyEmployeeSelected && ruleSelected));
+            }
+
+             function showAlert(message, type) {
+                const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                `;
+
+                const alertElement = $(alertHtml);
+                alertContainer.append(alertElement);
+
+                // Auto dismiss after 3 seconds
+                setTimeout(() => {
+                    alertElement.alert('close');
+                }, 3000);
+            }
+
+            // Handle select all checkbox change
+            selectAllCheckbox.change(function () {
+                employeeCheckboxes.prop('checked', $(this).is(':checked'));
+                updateAssignButtonState();
+            });
+
+            // Handle individual employee checkbox change
+            employeeCheckboxes.change(function () {
+                if (!$(this).is(':checked')) {
+                    selectAllCheckbox.prop('checked', false);
+                }
+                 updateAssignButtonState();
+            });
+
+            // Handle rule select change
+            workWeekRuleSelect.change(function(){
+                 updateAssignButtonState();
+            });
+
+            // Initial state update
+            updateAssignButtonState();
+
+            // Handle Assign Rules button click
+            assignRulesButton.click(function () {
+                const selectedEmployeeIds = [];
+                employeeCheckboxes.each(function () {
+                    if ($(this).is(':checked')) {
+                        selectedEmployeeIds.push($(this).closest('tr').data('employee-id'));
+                    }
+                });
+
+                const selectedRuleId = workWeekRuleSelect.val();
+                const selectedRuleName = workWeekRuleSelect.find('option:selected').text();
+
+                if (selectedEmployeeIds.length === 0 || selectedRuleId === '') {
+                    showAlert('Please select employees and a work week rule.', 'warning');
+                    return;
+                }
+
+                 // Show loading state
+                assignRulesButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Assigning...');
+
+                $.ajax({
+                    url: '@Url.Action("AssignWorkWeekRule", "Admin")',
+                    type: 'POST',
+                    data: { employeeIds: selectedEmployeeIds, ruleId: selectedRuleId },
+                    success: function(result) {
+                        if (result.success) {
+                            showAlert('Work week rule assigned successfully!', 'success');
+
+                            // Update the 'Rules Applied' column for the assigned employees
+                            selectedEmployeeIds.forEach(employeeId => {
+                                $(`tr[data-employee-id="${employeeId}"] td:last-child`).text(selectedRuleName);
+                            });
+
+                            // Reset form state
+                            employeeCheckboxes.prop('checked', false);
+                            selectAllCheckbox.prop('checked', false);
+                            workWeekRuleSelect.val('');
+                            updateAssignButtonState();
+
+                        } else {
+                            showAlert(result.message || 'Error assigning work week rule.', 'danger');
+                        }
+                    },
+                    error: function() {
+                        showAlert('An error occurred while assigning the work week rule.', 'danger');
+                    },
+                    complete: function() {
+                        // Reset button state regardless of success or error
+                        assignRulesButton.prop('disabled', false).html('<i class="fas fa-check-circle"></i> Assign Rules');
+                    }
+                });
+            });
+        });
+    </script>
+}

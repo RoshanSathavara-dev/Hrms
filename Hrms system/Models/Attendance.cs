@@ -51,6 +51,9 @@ namespace Hrms_system.Models
         public ICollection<BreakLog> BreakLogs { get; set; } = new List<BreakLog>();
 
 
+        [NotMapped]
+        public bool IsLate { get; set; }
+
 
     }
 }

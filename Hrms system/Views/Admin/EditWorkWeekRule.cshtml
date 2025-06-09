@@ -1,0 +1,176 @@
+﻿@model Hrms_system.Models.WorkWeekRule
+
+@{
+    ViewData["Title"] = "Edit Work Week Rule";
+    Layout = "_AdminLayout";
+}
+
+<style>
+    .weekly-pattern-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 40px);
+        gap: 5px;
+        margin-top: 10px;
+    }
+
+    .day-cell {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #ccc;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .working-day {
+        background-color: green;
+    }
+
+    .weekly-off {
+        background-color: red;
+    }
+
+    .day-label {
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+</style>
+
+<div class="container-fluid">
+    <h2>Edit Work Week Rule</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="EditWorkWeekRule" id="workWeekRuleForm">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Id" />
+                <input type="hidden" asp-for="CompanyId" />
+
+                <div class="form-group">
+                    <label asp-for="Name" class="control-label"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Description" class="control-label"></label>
+                    <textarea asp-for="Description" class="form-control"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <h4>Working Days Pattern (5 Weeks)</h4>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="weekly-pattern-grid">
+                            @* Day labels *@
+                            <div class="day-label">Mon</div>
+                            <div class="day-label">Tue</div>
+                            <div class="day-label">Wed</div>
+                            <div class="day-label">Thu</div>
+                            <div class="day-label">Fri</div>
+                            <div class="day-label">Sat</div>
+                            <div class="day-label">Sun</div>
+
+                            @* Weekly pattern cells (5 weeks x 7 days) *@
+                            @for (int week = 1; week <= 5; week++)
+                            {
+                                @for (int day = 0; day < 7; day++)
+                                {
+                                    <div class="day-cell" data-week="@week" data-day="@day"></div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group form-check mt-3">
+                    <input asp-for="IsDefault" class="form-check-input" />
+                    <label asp-for="IsDefault" class="form-check-label"></label>
+                </div>
+
+                <input type="hidden" asp-for="WeeklyPatternJson" id="weeklyPatternJson" />
+
+                <div class="form-group mt-3">
+                    <input type="submit" value="Save Changes" class="btn btn-primary" />
+                    <a asp-action="WorkWeekRules" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            const dayCells = $('.day-cell');
+            const weeklyPatternJsonInput = $('#weeklyPatternJson');
+            const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+            // Initialize the grid based on the existing WeeklyPatternJson
+            const existingPatternJson = weeklyPatternJsonInput.val();
+            let existingPattern = [];
+            if (existingPatternJson) {
+                try {
+                    existingPattern = JSON.parse(existingPatternJson);
+                } catch (e) {
+                    console.error("Error parsing WeeklyPatternJson:", e);
+                    // Initialize with default (all working days) if parsing fails
+                     for (let i = 0; i < 5; i++) {
+                        existingPattern.push(new Array(7).fill(1));
+                    }
+                }
+            } else {
+                 // Initialize with default (all working days) if no JSON exists
+                 for (let i = 0; i < 5; i++) {
+                    existingPattern.push(new Array(7).fill(1));
+                }
+            }
+
+            dayCells.each(function() {
+                const week = $(this).data('week') - 1; // 0-indexed week
+                const day = $(this).data('day'); // 0-indexed day
+                if (existingPattern[week] && existingPattern[week][day] === 1) {
+                    $(this).addClass('working-day').text('W');
+                } else {
+                    $(this).addClass('weekly-off').text('O');
+                }
+            });
+
+
+            // Toggle working day / weekly off on click
+            dayCells.on('click', function() {
+                if ($(this).hasClass('working-day')) {
+                    $(this).removeClass('working-day').addClass('weekly-off').text('O');
+                } else {
+                    $(this).removeClass('weekly-off').addClass('working-day').text('W');
+                }
+                updateWeeklyPatternJson();
+            });
+
+            // Function to update the hidden JSON input
+            function updateWeeklyPatternJson() {
+                const pattern = [];
+                for (let i = 0; i < 5; i++) {
+                    pattern.push(new Array(7).fill(0)); // Initialize with 0s
+                }
+
+                dayCells.each(function() {
+                    const week = $(this).data('week') - 1; // 0-indexed week
+                    const day = $(this).data('day'); // 0-indexed day
+                    if ($(this).hasClass('working-day')) {
+                        pattern[week][day] = 1; // 1 for working day
+                    }
+                });
+
+                weeklyPatternJsonInput.val(JSON.stringify(pattern));
+            }
+
+             // Handle form submission to ensure JSON is updated
+            $('#workWeekRuleForm').on('submit', function(event) {
+                updateWeeklyPatternJson(); // Ensure JSON is up-to-date before submitting
+            });
+        });
+    </script>
+}

@@ -1,4 +1,7 @@
 ﻿@model List<Attendance>
+@using Microsoft.EntityFrameworkCore
+@using Hrms_system.Data
+@inject ApplicationDbContext _context
 @{
     Layout = "_AdminLayout";
     var today = DateTime.Today;
@@ -7,6 +10,14 @@
     var employees = ViewBag.Employees as List<Employee> ?? new List<Employee>();
 
     var expectedHours = ViewBag.ExpectedWorkHours as TimeSpan? ?? TimeSpan.FromHours(8);
+
+    var monthStart = new DateTime(DateTime.Parse(selectedMonth + "-01").Year, DateTime.Parse(selectedMonth + "-01").Month, 1);
+    var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+    var leaveRequests = await _context.LeaveRequests
+        .Where(l => l.Status == "Approved" &&
+                    l.StartDate.Date <= monthEnd.Date &&
+                    l.EndDate.Date >= monthStart.Date)
+        .ToListAsync();
 }
 
 <!-- Add this at the top of <div class="container-fluid"> -->
@@ -29,7 +40,7 @@
         </div>
     </div>
 
-    <!-- View Type Toggle -->
+
     <!-- View Type Toggle -->
     <div class="btn-group mb-3" role="group">
         <a href="@Url.Action("Attendance", new { viewType = "daily" })"
@@ -55,7 +66,7 @@
         </div>
     </div>
 
-    <!-- Filter Section -->
+
     <!-- Filter Section -->
     <div class="card mb-4">
         <div class="card-body">
@@ -183,6 +194,22 @@
                         <span class="badge bg-info me-1">H</span>
                         <small>Holiday</small>
                     </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-secondary me-1">WO</span>
+                        <small>Week Off</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-primary me-1">L</span>
+                        <small>Leave</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-primary me-1">FH</span>
+                        <small>First Half</small>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-primary me-1">SH</span>
+                        <small>Second Half</small>
+                    </div>
                 </div>
             </div>
             <div class="card-body p-0">
@@ -224,6 +251,51 @@
                                             var isFutureDate = date > DateTime.Today;
                                             var attendance = employeeAttendance.FirstOrDefault(a => a.ClockIn.Date == date);
                                             var isHoliday = holidays.Any(h => h.Date.Date == date);
+                                            var isWeekOff = false;
+
+                                            // Check if employee is on leave for this date
+                                            var leaveRequest = leaveRequests.FirstOrDefault(l => l.EmployeeId == employee.Id &&
+                                            l.StartDate.Date <= date.Date &&
+                                            l.EndDate.Date >= date.Date);
+                                            var isOnLeave = leaveRequest != null;
+                                            var isHalfDay = isOnLeave && (date.Date == leaveRequest!.StartDate.Date && !string.IsNullOrEmpty(leaveRequest.StartHalf) ||
+                                            date.Date == leaveRequest!.EndDate.Date && !string.IsNullOrEmpty(leaveRequest.EndHalf));
+                                            var isFirstHalf = isHalfDay && ((date.Date == leaveRequest!.StartDate.Date && leaveRequest.StartHalf == "First") ||
+                                            (date.Date == leaveRequest!.EndDate.Date && leaveRequest.EndHalf == "First"));
+                                            var isSecondHalf = isHalfDay && ((date.Date == leaveRequest!.StartDate.Date && leaveRequest.StartHalf == "Second") ||
+                                            (date.Date == leaveRequest!.EndDate.Date && leaveRequest.EndHalf == "Second"));
+
+                                            // var isHalfDay = isOnLeave && (date.Date == leaveRequest.StartDate.Date && !string.IsNullOrEmpty(leaveRequest.StartHalf) ||
+                                            // date.Date == leaveRequest.EndDate.Date && !string.IsNullOrEmpty(leaveRequest.EndHalf));
+                                            // var isFirstHalf = isHalfDay && ((date.Date == leaveRequest.StartDate.Date && leaveRequest.StartHalf == "First") ||
+                                            // (date.Date == leaveRequest.EndDate.Date && leaveRequest.EndHalf == "First"));
+                                            // var isSecondHalf = isHalfDay && ((date.Date == leaveRequest.StartDate.Date && leaveRequest.StartHalf == "Second") ||
+                                            // (date.Date == leaveRequest.EndDate.Date && leaveRequest.EndHalf == "Second"));
+
+                                            if (employee.WorkWeekRule != null && !string.IsNullOrEmpty(employee.WorkWeekRule.WeeklyPatternJson))
+                                            {
+                                                try
+                                                {
+                                                    var weeklyPattern = System.Text.Json.JsonSerializer.Deserialize<int[][]>(employee.WorkWeekRule.WeeklyPatternJson);
+                                                    if (weeklyPattern != null && weeklyPattern.Length > 0)
+                                                    {
+                                                        int weekNumber = ((date.Day - 1) / 7) + 1;
+                                                        if (weekNumber > 5) weekNumber = 5;
+                                                        int dayOfWeek = ((int)date.DayOfWeek + 6) % 7;
+                                                        isWeekOff = weekNumber <= weeklyPattern.Length &&
+                                                        dayOfWeek < weeklyPattern[weekNumber - 1].Length &&
+                                                        weeklyPattern[weekNumber - 1][dayOfWeek] == 0;
+                                                    }
+                                                }
+                                                catch
+                                                {
+                                                    isWeekOff = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                isWeekOff = date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
+                                            }
 
                                             var status = "Absent"; // Default status
                                             if (isFutureDate)
@@ -233,6 +305,21 @@
                                             else if (isHoliday)
                                             {
                                                 status = "Holiday";
+                                            }
+                                            else if (isWeekOff)
+                                            {
+                                                status = "WeekOff";
+                                            }
+                                            else if (isOnLeave)
+                                            {
+                                                if (isHalfDay)
+                                                {
+                                                    status = isFirstHalf ? "FirstHalf" : "SecondHalf";
+                                                }
+                                                else
+                                                {
+                                                    status = "Leave";
+                                                }
                                             }
                                             else if (attendance != null)
                                             {
@@ -252,15 +339,32 @@
                                                         H
                                                     </span>
                                                 }
+                                                else if (status == "WeekOff")
+                                                {
+                                                    <span class="badge bg-secondary">WO</span>
+                                                }
+                                                else if (status == "Leave")
+                                                {
+                                                    <span class="badge bg-primary">L</span>
+                                                }
+                                                else if (status == "FirstHalf")
+                                                {
+                                                    <span class="badge bg-primary" title="First Half Leave">FH</span>
+                                                }
+                                                else if (status == "SecondHalf")
+                                                {
+                                                    <span class="badge bg-primary" title="Second Half Leave">SH</span>
+                                                }
                                                 else
                                                 {
                                                     <span class="badge @(status == "Present" ? "bg-success" :
-                                        status == "Late" ? "bg-warning" :
-                                        "bg-danger")">
-                                                        @(status == "Present" ? "P" : status == "Late" ? "L" : "A")
-                                                    </span>
-                                                }
+                                                                                                                                                            status == "Late" ? "bg-warning" :
+                                                                                                                                                            "bg-danger")">
+                                    @(status == "Present" ? "P" : status == "Late" ? "L" : "A")
+                                </span>
+                                                                }
                                             </td>
+
                                         }
                                         <td>@presentDays</td>
                                     </tr>

@@ -107,9 +107,9 @@
                                 <th>Date</th>
                                 <th>Clock In</th>
                                 <th>Clock Out</th>
-                                <th>Break</th>
-                                <th>Expected</th>
-                                <th>Actual</th>
+                                <th>Breaks</th>
+                                <th>Total Break</th>
+                                <th>Actual Hours</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
@@ -135,9 +135,24 @@
                                             <span class="badge bg-warning ms-2">Early</span>
                                         }
                                     </td>
-                                    <td>@item.BreakDuration.ToString(@"hh\:mm")</td>
-                                    <td>@item.ExpectedHours.ToString(@"hh\:mm")</td>
-                                    <td>@item.ActualHours.ToString(@"hh\:mm")</td>
+                                        <td>
+                                            @if (item.BreakLogs.Any())
+                                            {
+                                                <ul class="list-unstyled mb-0">
+                                                    @foreach (var breakLog in item.BreakLogs)
+                                                    {
+                                                        <li>@breakLog.BreakStart.ToString("HH:mm") - @(breakLog.BreakEnd?.ToString("HH:mm") ?? "-")</li>
+                                                    }
+                                                </ul>
+                                            }
+                                            else
+                                            {
+                                                <span>-</span>
+                                            }
+                                        </td>
+                                        <td>@item.BreakDuration.ToString(@"hh\:mm")</td>
+                                        <td>@item.ActualHours.ToString(@"hh\:mm")</td>
+
                                     <td>
                                         <span class="badge @(item.Status == "Complete" ? "bg-success" : "bg-danger")">
                                             @item.Status

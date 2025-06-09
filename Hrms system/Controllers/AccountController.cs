@@ -29,33 +29,36 @@
             [HttpGet]
             public IActionResult Register() => View();
 
-    
-            [HttpPost]
-            public async Task<IActionResult> Register(RegisterViewModel model)
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            // 1. Create user
+            var user = new ApplicationUser
             {
-                if (!ModelState.IsValid)
-                    return View(model);
+                UserName = model.Email,
+                Email = model.Email,
+                FullName = model.FullName
+            };
 
-                // 1. Create user
-                var user = new ApplicationUser
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
                 {
-                    UserName = model.Email,
-                    Email = model.Email,
-                    FullName = model.FullName
-                };
-
-                var result = await _userManager.CreateAsync(user, model.Password);
-
-                if (!result.Succeeded)
-                {
-                    foreach (var error in result.Errors)
-                    {
-                        ModelState.AddModelError(string.Empty, error.Description);
-                    }
-                    return View(model);
+                    ModelState.AddModelError(string.Empty, error.Description);
                 }
+                return View(model);
+            }
 
-                // 2. Create and save company, now that user is created and has Id
+            try
+            {
+                // 2. Create and save company
                 var company = new Company
                 {
                     CompanyName = model.CompanyName,
@@ -70,26 +73,46 @@
                 _context.Companies.Add(company);
                 await _context.SaveChangesAsync();
 
-                // 3. Update user's CompanyId now that company is created
+                // 3. Create Loss of Pay leave type for the new company
+                var lossOfPayLeaveType = new LeaveType
+                {
+                    Name = "Loss of Pay",
+                    Description = "Leave without pay",
+                    IsLossOfPay = true,
+                    LeavesAllowedPerYear = 0,
+                    IsCreditableOnAccrualBasis = false,
+                    CarryForwardEnabled = false,
+                    CompanyId = company.Id,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.LeaveTypes.Add(lossOfPayLeaveType);
+                await _context.SaveChangesAsync();
+
+                // 4. Update user's CompanyId
                 user.CompanyId = company.Id;
                 await _userManager.UpdateAsync(user);
-            HttpContext.Session.SetInt32("CompanyId", company.Id);
+                HttpContext.Session.SetInt32("CompanyId", company.Id);
 
-
-
-            // 4. Sign in and redirect
-            await _userManager.AddToRoleAsync(user, "Admin");
+                // 5. Add to Admin role and sign in
+                await _userManager.AddToRoleAsync(user, "Admin");
                 await _signInManager.SignInAsync(user, isPersistent: false);
 
                 return RedirectToAction("Index", "Admin");
             }
+            catch 
+            {
+                // If anything fails, delete the user we created
+                await _userManager.DeleteAsync(user);
+                ModelState.AddModelError(string.Empty, "An error occurred while creating your account. Please try again.");
+                return View(model);
+            }
+        }
 
 
 
 
-
-            // ✅ Login
-            [HttpGet]
+        // ✅ Login
+        [HttpGet]
             public async Task<IActionResult> Login(string? email = null)
             {
                 if (!string.IsNullOrEmpty(email))

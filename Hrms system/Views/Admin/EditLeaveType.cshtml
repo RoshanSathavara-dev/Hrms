@@ -1,0 +1,171 @@
+﻿@model Hrms_system.Models.LeaveType
+
+@{
+    Layout = "_AdminLayout";
+    var isReadOnly = Model.IsLossOfPay ? "readonly" : null;
+    var isDisabled = Model.IsLossOfPay ? "disabled" : null;
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Edit Leave Type</h3>
+    </div>
+    <div class="card-body">
+        <form asp-action="EditLeaveType" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CompanyId" />
+            <input type="hidden" asp-for="CreatedAt" />
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label asp-for="Name" class="control-label"></label>
+                        <input asp-for="Name" class="form-control" readonly="@isReadOnly" />
+                        <span asp-validation-for="Name" class="text-danger"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Description" class="control-label"></label>
+                        <textarea asp-for="Description" class="form-control"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+
+                    <h4>Leaves Count</h4>
+                    <div class="form-group">
+                        <label asp-for="LeavesAllowedPerYear" class="control-label"></label>
+                        <input asp-for="LeavesAllowedPerYear" class="form-control" type="number" step="0.5" readonly="@isReadOnly" />
+                        <span asp-validation-for="LeavesAllowedPerYear" class="text-danger"></span>
+                    </div>
+                    <div class="form-group form-check">
+                        <input asp-for="ConsiderHolidaysBetweenLeave" class="form-check-input" />
+                        <label asp-for="ConsiderHolidaysBetweenLeave" class="form-check-label"></label>
+                    </div>
+                    <div class="form-group form-check">
+                        <input asp-for="ConsiderWeekendsBetweenLeave" class="form-check-input" />
+                        <label asp-for="ConsiderWeekendsBetweenLeave" class="form-check-label"></label>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h4>Accrual Settings</h4>
+                    <div class="form-group form-check">
+                        <input asp-for="IsCreditableOnAccrualBasis" class="form-check-input" id="accrualBasis" disabled="@isDisabled" />
+                        <label asp-for="IsCreditableOnAccrualBasis" class="form-check-label"></label>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="AccrualFrequency" class="control-label"></label>
+                        <select asp-for="AccrualFrequency" class="form-control" id="accrualFrequency" disabled>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="Yearly">Yearly</option>
+                        </select>
+                        <span asp-validation-for="AccrualFrequency" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-check mt-2">
+                        <input asp-for="CreditOnFirstDayOfMonth" class="form-check-input" id="creditOnFirstDay" disabled="@isDisabled" />
+                        <label asp-for="CreditOnFirstDayOfMonth" class="form-check-label">
+                            Credit leaves on 1st of each month
+                        </label>
+                        <small class="form-text text-muted">
+                            If checked, leaves will be credited on the 1st of each month. If unchecked, leaves will be credited on the same date each month.
+                        </small>
+                    </div>
+
+                    <h4>Applicability</h4>
+                    <div class="form-group form-check">
+                        <input asp-for="AllowedUnderProbation" class="form-check-input" />
+                        <label asp-for="AllowedUnderProbation" class="form-check-label"></label>
+                    </div>
+                    <div class="form-group form-check">
+                        <input asp-for="AllowedUnderNoticePeriod" class="form-check-input" />
+                        <label asp-for="AllowedUnderNoticePeriod" class="form-check-label"></label>
+                    </div>
+                    <div class="form-group form-check">
+                        <input asp-for="LeaveEncashEnabled" class="form-check-input" />
+                        <label asp-for="LeaveEncashEnabled" class="form-check-label"></label>
+                    </div>
+
+                    <h4>Carry Forward</h4>
+                    <div class="form-group form-check">
+                        <input asp-for="CarryForwardEnabled" class="form-check-input" id="carryForward" disabled="@isDisabled" />
+                        <label asp-for="CarryForwardEnabled" class="form-check-label"></label>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="CarryForwardLimit" class="control-label"></label>
+                        <input asp-for="CarryForwardLimit" class="form-control" type="number" step="0.5" id="carryForwardLimit" disabled />
+                        <span asp-validation-for="CarryForwardLimit" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Save Changes" class="btn btn-primary" />
+                <a asp-action="LeaveTypes" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            function toggleAccrualOptions() {
+                var isAccrual = $('#accrualBasis').is(':checked');
+                $('#accrualOptions').toggle(isAccrual);
+                $('#accrualFrequency').prop('disabled', !isAccrual);
+                $('#creditOnFirstDay').prop('disabled', !isAccrual);
+            }
+
+            $('#accrualBasis').change(function () {
+                toggleAccrualOptions();
+                if ($(this).is(':checked')) {
+                    $('#accrualFrequency').val('Monthly');
+                } else {
+                    $('#accrualFrequency').val('');
+                    $('#creditOnFirstDay').prop('checked', false);
+                }
+            });
+
+            toggleAccrualOptions();
+
+            // Initialize accrual settings state
+            var accrualBasis = $('#accrualBasis').is(':checked');
+            $('#accrualFrequency').prop('disabled', !accrualBasis);
+            if (accrualBasis) {
+                $('#accrualFrequency').val('Monthly'); // Set default to Monthly on page load
+            } else {
+                $('#accrualFrequency').val('');
+            }
+
+            // Initialize carry forward settings state
+            var carryForward = $('#carryForward').is(':checked');
+            $('#carryForwardLimit').prop('disabled', !carryForward);
+            $('#carryForwardExpiry').prop('disabled', !carryForward);
+            if (!carryForward) {
+                $('#carryForwardLimit').val('');
+                $('#carryForwardExpiry').val('');
+            }
+
+            // Accrual settings toggle
+            $('#accrualBasis').change(function () {
+                $('#accrualFrequency').prop('disabled', !this.checked);
+                if (this.checked) {
+                    $('#accrualFrequency').val('Monthly'); // Set to Monthly when enabled
+                } else {
+                    $('#accrualFrequency').val('');
+                }
+            });
+
+            // Carry forward settings toggle
+            $('#carryForward').change(function () {
+                $('#carryForwardLimit').prop('disabled', !this.checked);
+                $('#carryForwardExpiry').prop('disabled', !this.checked);
+                if (!this.checked) {
+                    $('#carryForwardLimit').val('');
+                    $('#carryForwardExpiry').val('');
+                }
+            });
+        });
+    </script>
+}

@@ -76,5 +76,8 @@ namespace Hrms_system.Models
         public bool IsOnProbation { get; set; } = false;
         public bool IsOnNoticePeriod { get; set; } = false;
 
+        public int? WorkWeekRuleId { get; set; }
+        [ForeignKey("WorkWeekRuleId")]
+        public WorkWeekRule? WorkWeekRule { get; set; }
     }
 }

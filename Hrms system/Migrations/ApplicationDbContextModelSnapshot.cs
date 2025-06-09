@@ -22,6 +22,93 @@ namespace Hrms_system.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("Hrms_system.Models.Address", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AddressLine1")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AddressLine2")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("AddressType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("City")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Country")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Pincode")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("Addresses");
+                });
+
+            modelBuilder.Entity("Hrms_system.Models.Announcement", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Department")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("Announcements");
+                });
+
             modelBuilder.Entity("Hrms_system.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -307,6 +394,58 @@ namespace Hrms_system.Migrations
                     b.ToTable("Companies");
                 });
 
+            modelBuilder.Entity("Hrms_system.Models.Department", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("DepartmentHeadId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SubDepartments")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("Departments");
+                });
+
+            modelBuilder.Entity("Hrms_system.Models.Designation", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("Designations");
+                });
+
             modelBuilder.Entity("Hrms_system.Models.Employee", b =>
                 {
                     b.Property<int>("Id")
@@ -396,11 +535,16 @@ namespace Hrms_system.Migrations
                     b.Property<string>("UserId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("WorkWeekRuleId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CompanyId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("WorkWeekRuleId");
 
                     b.ToTable("Employees");
                 });
@@ -666,6 +810,9 @@ namespace Hrms_system.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("IsCreditableOnAccrualBasis")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsLossOfPay")
                         .HasColumnType("bit");
 
                     b.Property<bool>("LeaveEncashEnabled")
@@ -998,6 +1145,39 @@ namespace Hrms_system.Migrations
                     b.ToTable("SalarySlipHistories");
                 });
 
+            modelBuilder.Entity("Hrms_system.Models.WorkWeekRule", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDefault")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("WeeklyPatternJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
+
+                    b.ToTable("WorkWeekRules");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
                     b.Property<string>("Id")
@@ -1131,6 +1311,28 @@ namespace Hrms_system.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Hrms_system.Models.Address", b =>
+                {
+                    b.HasOne("Hrms_system.Models.Company", "Company")
+                        .WithMany("Addresses")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("Hrms_system.Models.Announcement", b =>
+                {
+                    b.HasOne("Hrms_system.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("Hrms_system.Models.ApplicationUser", b =>
                 {
                     b.HasOne("Hrms_system.Models.Company", "Company")
@@ -1174,6 +1376,28 @@ namespace Hrms_system.Migrations
                     b.Navigation("Attendance");
                 });
 
+            modelBuilder.Entity("Hrms_system.Models.Department", b =>
+                {
+                    b.HasOne("Hrms_system.Models.Company", "Company")
+                        .WithMany("Departments")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("Hrms_system.Models.Designation", b =>
+                {
+                    b.HasOne("Hrms_system.Models.Company", "Company")
+                        .WithMany("Designations")
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("Hrms_system.Models.Employee", b =>
                 {
                     b.HasOne("Hrms_system.Models.Company", "Company")
@@ -1186,9 +1410,15 @@ namespace Hrms_system.Migrations
                         .WithMany()
                         .HasForeignKey("UserId");
 
+                    b.HasOne("Hrms_system.Models.WorkWeekRule", "WorkWeekRule")
+                        .WithMany()
+                        .HasForeignKey("WorkWeekRuleId");
+
                     b.Navigation("Company");
 
                     b.Navigation("User");
+
+                    b.Navigation("WorkWeekRule");
                 });
 
             modelBuilder.Entity("Hrms_system.Models.EmployeeLeaveBalance", b =>
@@ -1341,6 +1571,17 @@ namespace Hrms_system.Migrations
                     b.Navigation("SalarySlip");
                 });
 
+            modelBuilder.Entity("Hrms_system.Models.WorkWeekRule", b =>
+                {
+                    b.HasOne("Hrms_system.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -1399,6 +1640,12 @@ namespace Hrms_system.Migrations
 
             modelBuilder.Entity("Hrms_system.Models.Company", b =>
                 {
+                    b.Navigation("Addresses");
+
+                    b.Navigation("Departments");
+
+                    b.Navigation("Designations");
+
                     b.Navigation("Employees");
                 });
 

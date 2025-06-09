@@ -1,0 +1,240 @@
+﻿@model Hrms_system.Models.WorkWeekRule
+
+@{
+    ViewData["Title"] = "Create Work Week Rule";
+    Layout = "_AdminLayout";
+}
+
+<style>
+    /* Container for the whole pattern area */
+    .weekly-pattern-container {
+        border: 1px solid #e0e0e0;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+    }
+
+    /* Grid for days and weeks */
+    .weekly-pattern-grid {
+        display: grid;
+        grid-template-columns: 80px repeat(7, 60px);
+        gap: 1px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        overflow: hidden;
+        background-color: #fff;
+    }
+
+    /* Base cell style */
+    .grid-cell {
+        width: 100%;
+        height: 45px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-right: 1px solid #dee2e6;
+        border-bottom: 1px solid #dee2e6;
+        background-color: #fff;
+    }
+
+    /* Style for day cells */
+    .day-cell {
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-weight: 500;
+    }
+
+        .day-cell:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+
+    .working-day {
+        background-color: #28a745;
+        color: white;
+    }
+
+    .weekly-off {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    /* Style for day labels */
+    .day-label {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    /* Style for week labels */
+    .week-label {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+        padding-left: 12px;
+        justify-content: flex-start;
+        border-right: 2px solid #dee2e6;
+    }
+
+    /* Legend styling */
+    .pattern-legend {
+        margin-top: 15px;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+    }
+
+    .legend-item {
+        display: inline-flex;
+        align-items: center;
+        margin-right: 20px;
+    }
+
+    .legend-badge {
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        margin-right: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 500;
+    }
+
+        .legend-badge.working {
+            background-color: #28a745;
+        }
+
+        .legend-badge.off {
+            background-color: #dc3545;
+        }
+</style>
+
+<div class="container-fluid">
+    <h2>Create Work Week Rule</h2>
+
+    <div class="card">
+        <div class="card-body">
+            <form asp-action="CreateWorkWeekRule" id="workWeekRuleForm">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                <div class="form-group">
+                    <label asp-for="Name" class="control-label"></label>
+                    <input asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Description" class="control-label"></label>
+                    <textarea asp-for="Description" class="form-control"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <h4 class="mt-4">Working Days Pattern (5 Weeks)</h4>
+                <div class="weekly-pattern-container">
+                    <div class="weekly-pattern-grid">
+                        @* Corner empty cell *@
+                        <div class="grid-cell"></div>
+
+                        @* Day labels *@
+                        <div class="grid-cell day-label">Mon</div>
+                        <div class="grid-cell day-label">Tue</div>
+                        <div class="grid-cell day-label">Wed</div>
+                        <div class="grid-cell day-label">Thu</div>
+                        <div class="grid-cell day-label">Fri</div>
+                        <div class="grid-cell day-label">Sat</div>
+                        <div class="grid-cell day-label">Sun</div>
+
+                        @* Weekly pattern cells (5 weeks x 7 days) *@
+                        @for (int week = 1; week <= 5; week++)
+                        {
+                            <div class="grid-cell week-label">Week @week</div>
+                            @for (int day = 0; day < 7; day++)
+                            {
+                                <div class="grid-cell day-cell" data-week="@week" data-day="@day"></div>
+                            }
+                        }
+                    </div>
+                    <div class="pattern-legend">
+                        <div class="legend-item">
+                            <span class="legend-badge working">W</span>
+                            <span>Working Day</span>
+                        </div>
+                        <div class="legend-item">
+                            <span class="legend-badge off">O</span>
+                            <span>Weekly Off</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group form-check mt-3">
+                    <input asp-for="IsDefault" class="form-check-input" />
+                    <label asp-for="IsDefault" class="form-check-label"></label>
+                </div>
+
+                <input type="hidden" asp-for="WeeklyPatternJson" id="weeklyPatternJson" />
+
+                <div class="form-group mt-3">
+                    <input type="submit" value="Create" class="btn btn-primary" />
+                    <a asp-action="WorkWeekRules" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function () {
+            const dayCells = $('.day-cell');
+            const weeklyPatternJsonInput = $('#weeklyPatternJson');
+            const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+            // Initialize the grid (all working days by default)
+            dayCells.each(function() {
+                $(this).addClass('working-day').text('W');
+            });
+
+            // Toggle working day / weekly off on click
+            dayCells.on('click', function() {
+                if ($(this).hasClass('working-day')) {
+                    $(this).removeClass('working-day').addClass('weekly-off').text('O');
+                } else {
+                    $(this).removeClass('weekly-off').addClass('working-day').text('W');
+                }
+                updateWeeklyPatternJson();
+            });
+
+            // Function to update the hidden JSON input
+            function updateWeeklyPatternJson() {
+                const pattern = [];
+                for (let i = 0; i < 5; i++) {
+                    pattern.push(new Array(7).fill(0)); // Initialize with 0s
+                }
+
+                dayCells.each(function() {
+                    const week = $(this).data('week') - 1; // 0-indexed week
+                    const day = $(this).data('day'); // 0-indexed day
+                    if ($(this).hasClass('working-day')) {
+                        pattern[week][day] = 1; // 1 for working day
+                    }
+                });
+
+                weeklyPatternJsonInput.val(JSON.stringify(pattern));
+            }
+
+            // Initial update of JSON based on the default state
+            updateWeeklyPatternJson();
+
+            // Handle form submission to ensure JSON is updated
+            $('#workWeekRuleForm').on('submit', function(event) {
+                updateWeeklyPatternJson(); // Ensure JSON is up-to-date before submitting
+            });
+        });
+    </script>
+}

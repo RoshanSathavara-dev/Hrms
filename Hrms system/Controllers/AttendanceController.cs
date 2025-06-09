@@ -199,6 +199,9 @@ namespace Hrms_system.Controllers
 
 
 
+
+
+
         // ✅ Clock Out
         [HttpPost]
         public async Task<IActionResult> ClockOut()
@@ -348,6 +351,8 @@ namespace Hrms_system.Controllers
             date ??= DateTime.Today;
             var userId = _userManager.GetUserId(User);
             List<DailyAttendanceViewModel> model = new List<DailyAttendanceViewModel>();
+
+
 
             if (viewType == "monthly")
             {
@@ -672,6 +677,7 @@ namespace Hrms_system.Controllers
                 worksheet.Cell(1, 6).Value = "Break End";
                 worksheet.Cell(1, 7).Value = "Total Hours";
                 worksheet.Cell(1, 8).Value = "Break Duration";
+          
 
                 int row = 2;
                 foreach (var record in attendanceList)
@@ -684,6 +690,7 @@ namespace Hrms_system.Controllers
                     worksheet.Cell(row, 6).Value = record.BreakEnd?.ToString("g") ?? "N/A";
                     worksheet.Cell(row, 7).Value = record.TotalHours?.ToString(@"hh\:mm") ?? "N/A";
                     worksheet.Cell(row, 8).Value = record.TotalBreakDuration.ToString(@"hh\:mm");
+                  
                     row++;
                 }
 

@@ -25,5 +25,11 @@ namespace Hrms_system.Models
 
   
         public ICollection<Employee>? Employees { get; set; } // Navigation property
+
+        public ICollection<Address>? Addresses { get; set; }
+
+        public ICollection<Designation>? Designations { get; set; }
+
+        public virtual ICollection<Department>? Departments { get; set; }
     }
 }

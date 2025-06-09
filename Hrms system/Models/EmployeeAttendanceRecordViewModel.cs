@@ -12,5 +12,6 @@
         public string? Status { get; set; }
         public bool IsLate { get; set; }
         public bool IsEarlyDeparture { get; set; }
+        public List<BreakLog> BreakLogs { get; set; } = new List<BreakLog>();
     }
 }

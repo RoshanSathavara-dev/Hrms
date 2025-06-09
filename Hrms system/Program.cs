@@ -36,6 +36,7 @@ builder.Services.AddScoped<IAttendancePolicyService, AttendancePolicyService>();
 
 
 
+
 builder.Services.Configure<SecurityStampValidatorOptions>(options =>
 {
     options.ValidationInterval = TimeSpan.Zero;

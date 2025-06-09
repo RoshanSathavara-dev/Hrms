@@ -1,0 +1,81 @@
+﻿@model IEnumerable<Hrms_system.Models.Attendance>
+
+@{
+    ViewData["Title"] = "Auto Clock-Out Records";
+}
+
+<div class="container-fluid">
+    <h2>Auto Clock-Out Records</h2>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-filter"></i>
+            Filter Records
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="fromDate" class="form-label">From Date</label>
+                    <input type="date" class="form-control" id="fromDate" name="fromDate" value="@ViewBag.FromDate?.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="col-md-4">
+                    <label for="toDate" class="form-label">To Date</label>
+                    <input type="date" class="form-control" id="toDate" name="toDate" value="@ViewBag.ToDate?.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="@Url.Action("AutoClockOutRecords")" class="btn btn-secondary ms-2">Clear</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <i class="fas fa-table"></i>
+            Auto Clock-Out Records
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="autoClockOutTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Employee Name</th>
+                            <th>Department</th>
+                            <th>Company</th>
+                            <th>Clock In</th>
+                            <th>Clock Out</th>
+                            <th>Total Hours</th>
+                            <th>Auto Clock-Out Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var record in Model)
+                        {
+                            <tr>
+                                <td>@(record.Employee != null ? $"{record.Employee.FirstName} {record.Employee.LastName}" : "N/A")</td>
+                                <td>@(record.Employee?.Department ?? "N/A")</td>
+                                <td>@(record.Company?.CompanyName ?? "N/A")</td>
+                                <td>@record.ClockIn.ToString("g")</td>
+                                <td>@(record.ClockOut?.ToString("g") ?? "N/A")</td>
+                                <td>@(record.TotalHours?.ToString(@"hh\:mm") ?? "N/A")</td>
+                                <td>@(record.ClockOut?.ToString("g") ?? "N/A")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#autoClockOutTable').DataTable({
+                order: [[3, 'desc']], // Sort by Clock In time by default
+                pageLength: 25
+            });
+        });
+    </script>
+}

@@ -122,6 +122,11 @@
                                     My Leave Balance
                                 </a>
                             </li>
+                              <li class="nav-item">
+                                <a class="nav-link" asp-controller="Announcement" asp-action="Index">
+                                    <i class="fas fa-bullhorn me-1"></i> Announcements
+                                </a>
+                            </li>
 
                         <!-- ✅ User Dropdown Menu -->
 
@@ -138,6 +143,7 @@
                                             <button type="submit" class="dropdown-item text-danger"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
                                         </form>
                                     </li>
+
                                 </ul>
                             </li>
                         }
@@ -177,10 +183,19 @@
 
 <script>
     // Force logout when browser/tab closes
-    window.addEventListener('beforeunload', function() {
-        // Send an async request to logout
-        navigator.sendBeacon('@Url.Action("SilentLogout", "Account")');
-    });
+// Only trigger silent logout if RememberMe is not checked
+window.addEventListener('beforeunload', function() {
+    const rememberMe = document.querySelector('input[name="RememberMe"]:checked');
+    if (!rememberMe) {
+        fetch('/Account/SilentLogout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include' // Important for cookies
+        });
+    }
+});
     function showBootstrapAlert(type, message, duration = 5000) {
         // Create alert div
         const alertDiv = document.createElement('div');

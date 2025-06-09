@@ -50,13 +50,14 @@
 
     <!-- Stats Cards -->
     <div class="row mb-4">
+
         <div class="col-md-3 mb-3">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Worked This Month</h6>
-                            <h3 class="mb-0">104.5 hrs</h3>
+                            <h3 class="mb-0">@ViewBag.MonthlyWorkHours hrs</h3>
                         </div>
                         <div class="bg-primary bg-opacity-10 p-3 rounded">
                             <i class="fas fa-clock text-primary fs-4"></i>
@@ -65,13 +66,14 @@
                 </div>
             </div>
         </div>
+
         <div class="col-md-3 mb-3">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Leave Balance</h6>
-                            <h3 class="mb-0">12 days</h3>
+                            <h3 class="mb-0">@ViewBag.LeaveBalance days</h3>
                         </div>
                         <div class="bg-success bg-opacity-10 p-3 rounded">
                             <i class="fas fa-umbrella-beach text-success fs-4"></i>
@@ -80,13 +82,14 @@
                 </div>
             </div>
         </div>
+
         <div class="col-md-3 mb-3">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="text-muted mb-2">Pending Requests</h6>
-                            <h3 class="mb-0">3</h3>
+                            <h3 class="mb-0">@ViewBag.PendingRequests</h3>
                         </div>
                         <div class="bg-warning bg-opacity-10 p-3 rounded">
                             <i class="fas fa-tasks text-warning fs-4"></i>
@@ -95,21 +98,23 @@
                 </div>
             </div>
         </div>
+
         <div class="col-md-3 mb-3">
             <div class="card h-100">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="text-muted mb-2">Salary Status</h6>
-                            <h3 class="mb-0">Paid</h3>
+                            <h6 class="text-muted mb-2">Today's Status</h6>
+                            <h3 class="mb-0">@(ViewBag.UserAttendance?.ClockOut == null ? "Working" : "Completed")</h3>
                         </div>
                         <div class="bg-info bg-opacity-10 p-3 rounded">
-                            <i class="fas fa-money-bill-wave text-info fs-4"></i>
+                            <i class="fas fa-user-check text-info fs-4"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- Main Content -->
@@ -294,25 +299,49 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>@DateTime.Now.AddDays(-1).ToString("MMM dd, yyyy")</td>
-                                    <td>Salary credited for @DateTime.Now.AddMonths(-1).ToString("MMMM yyyy")</td>
-                                    <td><span class="badge bg-success">Salary</span></td>
-                                    <td><span class="badge bg-success">Completed</span></td>
-                                </tr>
-                                <tr>
-                                    <td>@DateTime.Now.AddDays(-2).ToString("MMM dd, yyyy")</td>
-                                    <td>Annual Leave Request</td>
-                                    <td><span class="badge bg-primary">Leave</span></td>
-                                    <td><span class="badge bg-warning">Pending</span></td>
-                                </tr>
-                                <tr>
-                                    <td>@DateTime.Now.AddDays(-3).ToString("MMM dd, yyyy")</td>
-                                    <td>Attendance Regularization</td>
-                                    <td><span class="badge bg-info">Attendance</span></td>
-                                    <td><span class="badge bg-success">Approved</span></td>
-                                </tr>
+                                @if (ViewBag.RecentActivities != null && ViewBag.RecentActivities.Count > 0)
+                                {
+                                    @foreach (var activity in ViewBag.RecentActivities)
+                                    {
+                                        <tr>
+                                            <td>@activity.Date.ToString("MMM dd, yyyy")</td>
+                                            <td>
+                                                @activity.Activity
+                                                <br />
+                                                <small class="text-muted">
+                                                    @activity.StartDate.ToString("MMM dd") - @activity.EndDate.ToString("MMM dd")
+                                                </small>
+                                            </td>
+                                            <td><span class="badge bg-primary">Leave</span></td>
+                                            <td>
+                                                @{
+                                                    var statusClass = activity.Status switch
+                                                    {
+                                                        "Approved" => "bg-success",
+                                                        "Rejected" => "bg-danger",
+                                                        "Pending" => "bg-warning",
+                                                        _ => "bg-secondary"
+                                                    };
+                                                }
+                                                <span class="badge @statusClass">@activity.Status</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4">
+                                            <div class="text-muted">
+                                                <i class="fas fa-info-circle me-2"></i>
+                                                No recent activities found
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
                             </tbody>
+
+
                         </table>
                     </div>
                 </div>

@@ -10,7 +10,7 @@ using System.Security.Claims;
 using ClosedXML.Excel;
 using Microsoft.IdentityModel.Tokens;
 using Hrms_system.Services;
-
+using Hrms_system.ViewModels;
 
 namespace Hrms_system.Controllers
     {
@@ -53,6 +53,27 @@ namespace Hrms_system.Controllers
             }
 
             var companyId = user.CompanyId.Value;
+            var totalEmployees = await _context.Employees
+                   .CountAsync(e => e.CompanyId == companyId);
+
+            // Get employees on leave today
+            var today = DateTime.Today;
+            var onLeaveToday = await _context.LeaveRequests
+                .CountAsync(l => l.CompanyId == companyId &&
+                                l.Status == "Approved" &&
+                                l.StartDate <= today &&
+                                l.EndDate >= today);
+
+            // Get pending leave requests
+            var pendingRequests = await _context.LeaveRequests
+                .CountAsync(l => l.CompanyId == companyId && l.Status == "Pending");
+
+            // Get employees on break now
+            var onBreakNow = await _context.Attendance
+                .CountAsync(a => a.CompanyId == companyId &&
+                                a.BreakStart != null &&
+                                a.BreakEnd == null &&
+                                a.ClockOut == null);
 
             var pendingLeaves = await _context.LeaveRequests
                 .Where(l => l.Status == "Pending" && l.CompanyId == companyId)
@@ -65,6 +86,11 @@ namespace Hrms_system.Controllers
                 .OrderByDescending(e => e.JoinDate)
                 .Take(5)
                 .ToListAsync();
+
+            ViewBag.TotalEmployees = totalEmployees;
+            ViewBag.OnLeaveToday = onLeaveToday;
+            ViewBag.PendingRequests = pendingRequests;
+            ViewBag.OnBreakNow = onBreakNow;
 
             var model = new AdminDashboardViewModel
             {
@@ -164,6 +190,7 @@ namespace Hrms_system.Controllers
 
             var query = _context.Attendance
                 .Include(a => a.Employee)
+                  .ThenInclude(e => e.WorkWeekRule)
                 .Where(a => a.ClockIn.Date >= fromDate.Value.Date && a.ClockIn.Date <= toDate.Value.Date && a.CompanyId == companyId);
 
             if (!string.IsNullOrEmpty(status))
@@ -687,6 +714,15 @@ namespace Hrms_system.Controllers
                 return NotFound();
             }
 
+
+            var attendanceRecords = await _context.Attendance
+    .Include(a => a.BreakLogs)
+    .Where(a => a.EmployeeId == employeeId &&
+               a.ClockIn.Date >= fromDate &&
+               a.ClockIn.Date <= toDate)
+    .OrderByDescending(a => a.ClockIn)
+    .ToListAsync();
+
             var policy = await _context.AttendancePolicies
                 .FirstOrDefaultAsync(p => p.CompanyId == companyId) ?? GetDefaultPolicy();
 
@@ -709,6 +745,7 @@ namespace Hrms_system.Controllers
                     BreakDuration = a.TotalBreakDuration,
                     ExpectedHours = policy.ExpectedWorkHours,
                     ActualHours = CalculateActualHours(a, policy),
+                    BreakLogs = a.BreakLogs.ToList(),
                     Status = GetComplianceStatus(a, policy),
                     IsLate = IsLateArrival(a.ClockIn, policy),
                     IsEarlyDeparture = IsEarlyDeparture(a.ClockOut, policy)
@@ -1010,15 +1047,26 @@ namespace Hrms_system.Controllers
 
             try
             {
-                if (model.CompanyId == 0)
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+                if (user == null || user.CompanyId == null)
                 {
-                    model.CompanyId = 5;
+                    return RedirectToAction("Index", "Home");
+                }
+
+                model.CompanyId = user.CompanyId.Value;
+
+                // For Loss of Pay leaves, set LeavesAllowedPerYear to 0
+                if (model.IsLossOfPay)
+                {
+                    model.LeavesAllowedPerYear = 0;
+                    model.IsCreditableOnAccrualBasis = false;
+                    model.CarryForwardEnabled = false;
                 }
 
                 model.CreatedAt = DateTime.UtcNow;
                 _context.LeaveTypes.Add(model);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Created leave type {LeaveTypeId} with name {Name}", model.Id, model.Name);
 
                 var employees = await _context.Employees
                     .Where(e => e.CompanyId == model.CompanyId)
@@ -1063,7 +1111,6 @@ namespace Hrms_system.Controllers
                             LastAccrualDate = model.CreditOnFirstDayOfMonth ? null : DateTime.UtcNow
                         });
                     }
-
                 }
 
                 await _context.SaveChangesAsync();
@@ -1519,8 +1566,14 @@ namespace Hrms_system.Controllers
         }
 
         // GET: Edit Leave Type
-        public async Task<IActionResult> EditLeaveType(int id)
+        // GET: Edit Leave Type
+        public async Task<IActionResult> EditLeaveType(int? id)
         {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
             var leaveType = await _context.LeaveTypes.FindAsync(id);
             if (leaveType == null)
             {
@@ -1532,6 +1585,7 @@ namespace Hrms_system.Controllers
 
         // POST: Edit Leave Type
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditLeaveType(int id, LeaveType model)
         {
             if (id != model.Id)
@@ -1539,28 +1593,37 @@ namespace Hrms_system.Controllers
                 return NotFound();
             }
 
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                return View(model);
-            }
-
-            try
-            {
-                model.UpdatedAt = DateTime.UtcNow;
-                _context.Update(model);
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!LeaveTypeExists(model.Id))
+                try
                 {
-                    return NotFound();
-                }
-                throw;
-            }
+                    // For Loss of Pay leaves, set LeavesAllowedPerYear to 0
+                    if (model.IsLossOfPay)
+                    {
+                        model.LeavesAllowedPerYear = 0;
+                        model.IsCreditableOnAccrualBasis = false;
+                        model.CarryForwardEnabled = false;
+                    }
 
-            return RedirectToAction(nameof(LeaveTypes));
+                    _context.Update(model);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!LeaveTypeExists(model.Id))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
+            return View(model);
         }
+
 
         // POST: Delete Leave Type
         [HttpPost]
@@ -1784,8 +1847,10 @@ namespace Hrms_system.Controllers
 
             try
             {
+                // Retrieve assignments, excluding those for Loss of Pay leave types
                 var assignments = await _context.LeaveAssignments
-                    .Where(la => employeeIds.Contains(la.EmployeeId) && la.IsActive)
+                    .Include(la => la.LeaveType)
+                    .Where(la => employeeIds.Contains(la.EmployeeId) && la.IsActive && !la.LeaveType.IsLossOfPay)
                     .ToListAsync();
 
                 foreach (var assignment in assignments)
@@ -1796,14 +1861,15 @@ namespace Hrms_system.Controllers
                 }
 
                 await _context.SaveChangesAsync();
-                return Json(new { success = true, message = "Leave assignments deleted successfully." });
+                return Json(new { success = true, message = "Selected non-Loss of Pay leave assignments deleted successfully." });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting leave assignments.");
+                _logger.LogError(ex, "Error deleting leave assignments in bulk.");
                 return Json(new { success = false, message = "An error occurred while deleting leave assignments." });
             }
         }
+
         // POST: Remove Leave Assignment
         [HttpPost]
         [Authorize(Roles = "Admin")]
@@ -1825,53 +1891,320 @@ namespace Hrms_system.Controllers
             return RedirectToAction(nameof(AssignLeaves));
         }
 
+        public async Task<IActionResult> WorkWeekRules()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null || user.CompanyId == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
 
-        //[HttpPost]
-        //public async Task<IActionResult> AssignLeaves(int employeeId, int leaveTypeId, decimal leaves)
-        //{
-        //    var existingBalance = await _context.EmployeeLeaveBalances
-        //        .FirstOrDefaultAsync(b => b.EmployeeId == employeeId && b.LeaveTypeId == leaveTypeId);
+            var companyId = user.CompanyId.Value;
+            var workWeekRules = await _context.WorkWeekRules
+                .Where(r => r.CompanyId == companyId)
+                .ToListAsync();
 
-        //    if (existingBalance == null)
-        //    {
-        //        var newBalance = new EmployeeLeaveBalance
-        //        {
-        //            EmployeeId = employeeId,
-        //            LeaveTypeId = leaveTypeId,
-        //            TotalLeaves = leaves,
-        //            UsedLeaves = 0,
-        //            PendingLeaves = 0
-        //        };
-        //        _context.EmployeeLeaveBalances.Add(newBalance);
-        //    }
-        //    else
-        //    {
-        //        existingBalance.TotalLeaves = leaves;
-        //        _context.Update(existingBalance);
-        //    }
+            return View(workWeekRules);
+        }
 
-        //    await _context.SaveChangesAsync();
-        //    return RedirectToAction(nameof(AssignLeaves));
-        //}
-        // GET: Employee Leave Balances
-        //public async Task<IActionResult> LeaveBalances()
-        //{
-        //    var user = await _userManager.GetUserAsync(User);
-        //    var companyId = user.CompanyId ?? 0;
+        public IActionResult CreateWorkWeekRule()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = _context.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null || user.CompanyId == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
 
-        //    var balances = await _context.EmployeeLeaveBalances
-        //        .Include(b => b.Employee)
-        //        .Include(b => b.LeaveType)
-        //        .Where(b => b.Employee.CompanyId == companyId)
-        //        .ToListAsync();
+            // Pass CompanyId to the view if needed, or handle in POST
+            // return View(new WorkWeekRule { CompanyId = user.CompanyId.Value });
+            return View();
+        }
 
-        //    return View(balances);
-        //}
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateWorkWeekRule(WorkWeekRule workWeekRule)
+        {
+            // Remove validation errors related to the old boolean day properties
+            foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" })
+            {
+                ModelState.Remove(day);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // We might need to re-populate the view model with the submitted WeeklyPatternJson
+                return View(workWeekRule);
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null || user.CompanyId == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            workWeekRule.CompanyId = user.CompanyId.Value;
+
+            // If this rule is set as default, unset the previous default for this company
+            if (workWeekRule.IsDefault)
+            {
+                var currentDefault = await _context.WorkWeekRules
+                    .FirstOrDefaultAsync(r => r.CompanyId == workWeekRule.CompanyId && r.IsDefault);
+                if (currentDefault != null)
+                {
+                    currentDefault.IsDefault = false;
+                    _context.Update(currentDefault);
+                }
+            }
+
+            _context.Add(workWeekRule);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(WorkWeekRules));
+        }
+
+
+        public async Task<IActionResult> EditWorkWeekRule(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null || user.CompanyId == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var workWeekRule = await _context.WorkWeekRules
+                .FirstOrDefaultAsync(r => r.Id == id && r.CompanyId == user.CompanyId.Value);
+
+            if (workWeekRule == null)
+            {
+                return NotFound();
+            }
+
+            return View(workWeekRule);
+        }
+
+        // ... existing code ...
+
+        // POST: Edit Work Week Rule
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditWorkWeekRule(int id, WorkWeekRule workWeekRule)
+        {
+            if (id != workWeekRule.Id)
+            {
+                return NotFound();
+            }
+
+            // Manually set CompanyId from user to prevent tampering
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null || user.CompanyId == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+            workWeekRule.CompanyId = user.CompanyId.Value;
+
+            // Remove validation errors related to the old boolean day properties
+            foreach (var day in new[] { "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" })
+            {
+                ModelState.Remove(day);
+            }
+
+            if (!ModelState.IsValid)
+            {
+                // We might need to re-populate the view model with the submitted WeeklyPatternJson
+                return View(workWeekRule);
+            }
+
+            try
+            {
+                // If this rule is set as default, unset the previous default for this company
+                if (workWeekRule.IsDefault)
+                {
+                    var currentDefault = await _context.WorkWeekRules
+                        .FirstOrDefaultAsync(r => r.CompanyId == workWeekRule.CompanyId && r.IsDefault && r.Id != workWeekRule.Id);
+                    if (currentDefault != null)
+                    {
+                        currentDefault.IsDefault = false;
+                        _context.Update(currentDefault);
+                    }
+                }
+
+                _context.Update(workWeekRule);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!WorkWeekRuleExists(workWeekRule.Id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return RedirectToAction(nameof(WorkWeekRules));
+        }
+
+
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteWorkWeekRule(int id)
+        {
+            try
+            {
+                var rule = await _context.WorkWeekRules.FindAsync(id);
+                if (rule == null)
+                {
+                    return Json(new { success = false, message = "Work week rule not found." });
+                }
+
+                // Check if this is the only default rule
+                if (rule.IsDefault)
+                {
+                    var defaultRulesCount = await _context.WorkWeekRules
+                        .Where(w => w.CompanyId == rule.CompanyId && w.IsDefault)
+                        .CountAsync();
+
+                    if (defaultRulesCount <= 1)
+                    {
+                        return Json(new { success = false, message = "Cannot delete the only default rule. Please set another rule as default first." });
+                    }
+                }
+
+                _context.WorkWeekRules.Remove(rule);
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true });
+            }
+            catch 
+            {
+                return Json(new { success = false, message = "An error occurred while deleting the work week rule." });
+            }
+        }
+
+
+
+
+        private bool WorkWeekRuleExists(int id)
+        {
+            return _context.WorkWeekRules.Any(e => e.Id == id);
+        }
+
+
+
 
         private bool LeaveTypeExists(int id)
         {
             return _context.LeaveTypes.Any(e => e.Id == id);
         }
+
+        public async Task<IActionResult> AssignWorkWeek()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null || user.CompanyId == null)
+            {
+                return RedirectToAction("Index", "Home");
+            }
+
+            var companyId = user.CompanyId.Value;
+
+            var employees = await _context.Employees
+                .Where(e => e.CompanyId == companyId)
+                .Include(e => e.WorkWeekRule) // Include the assigned work week rule
+                .Select(e => new EmployeeWorkWeekViewModel
+                {
+                    Id = e.Id,
+                    // Removed EmployeeCode
+                    FullName = e.FullName,
+                    Department = e.Department,
+                    // Removed Location
+                    // Removed Type
+                    // Include the assigned work week rule name
+                    AssignedWorkWeekRuleName = e.WorkWeekRule != null ? e.WorkWeekRule.Name : "Not Assigned"
+                })
+                .ToListAsync();
+
+            var workWeekRules = await _context.WorkWeekRules
+                .Where(r => r.CompanyId == companyId)
+                .ToListAsync();
+
+            var viewModel = new AssignWorkWeekViewModel
+            {
+                Employees = employees,
+                WorkWeekRules = workWeekRules
+            };
+
+            return View(viewModel);
+        }
+        [HttpPost]
+        public async Task<IActionResult> AssignWorkWeekRule(List<int> employeeIds, int ruleId)
+        {
+            if (employeeIds == null || !employeeIds.Any() || ruleId <= 0)
+            {
+                return Json(new { success = false, message = "Invalid selection." });
+            }
+
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var user = await _context.Users.Include(u => u.Company).FirstOrDefaultAsync(u => u.Id == userId);
+                if (user == null || user.CompanyId == null)
+                {
+                    return Json(new { success = false, message = "User or company not found." });
+                }
+
+                var companyId = user.CompanyId.Value;
+
+                // Verify the rule belongs to the user's company
+                var workWeekRule = await _context.WorkWeekRules
+                    .FirstOrDefaultAsync(r => r.Id == ruleId && r.CompanyId == companyId);
+
+                if (workWeekRule == null)
+                {
+                    return Json(new { success = false, message = "Selected work week rule not found or does not belong to your company." });
+                }
+
+                // Fetch the employees belonging to the user's company from the selected IDs
+                var employeesToUpdate = await _context.Employees
+                    .Where(e => e.CompanyId == companyId && employeeIds.Contains(e.Id))
+                    .ToListAsync();
+
+                if (!employeesToUpdate.Any())
+                {
+                    return Json(new { success = false, message = "No selected employees found in your company." });
+                }
+
+                // Assign the work week rule to the selected employees
+                foreach (var employee in employeesToUpdate)
+                {
+                    employee.WorkWeekRuleId = ruleId;
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Json(new { success = true, ruleName = workWeekRule.Name });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning work week rule.");
+                return Json(new { success = false, message = "An error occurred while assigning the work week rule." });
+            }
+        }
+
+
+
 
 
 
